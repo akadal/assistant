@@ -1,0 +1,6 @@
+# Normalise line endings in the repository and check out LF everywhere.
+#
+# This is not cosmetic: sleep-check.sh is run as `sh memory/tools/sleep-check.sh`, and a shell
+# script committed with CRLF fails on Linux and macOS with "bad interpreter". The repository is
+# meant to be cloned on any machine, so LF is the only safe answer.
+* text=auto eol=lf

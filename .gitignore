@@ -1,0 +1,30 @@
+# Derived vector index (docs/DESIGN.md §3.1) — derived per machine, never in the repo
+memory/.index/
+
+# Machine alias — local to each machine, must not sync
+memory/.machine
+
+# Secrets: default-deny. Only the README is tracked.
+# Read memory/secret/README.md before you change this — committing secrets to git means
+# committing them to every future clone, and removing them later rewrites history.
+memory/secret/*
+!memory/secret/README.md
+!memory/secret/.gitkeep
+
+# Derived clones — the capability pool (AGENTS.md §11)
+temp/
+
+# Large binaries stay outside the repository
+*.zip
+*.tar
+*.tar.gz
+*.mp4
+*.mov
+
+# Python by-products
+__pycache__/
+*.pyc
+
+# OS noise
+.DS_Store
+Thumbs.db
