@@ -161,6 +161,11 @@ down proportionally — budgets exist to bound *tokens*; characters are only the
 Path and `[[link]]` target checks apply **only to the L1 routing surface** (root, `state.md`,
 `questions.md`, `todo.md`, index, topic, entity). `archive/` is exempt.
 
+Within a checked file, links inside **code spans, fenced blocks and HTML comments are ignored**.
+A `[[link]]` written between backticks is documentation *about* the grammar, not a pointer to
+resolve. Without this rule, any file that explains the link syntax — every template ships one —
+would fail lint on day one, and the only way to go green would be to stop documenting the syntax.
+
 Reason: L2 is immutable (invariant #1) and records the paths that were correct when it was written.
 If a file is legitimately moved or removed, the archive's reference "breaks" but cannot be fixed —
 fixing it would mean writing to L2. Without this exemption invariants #1 and #4 conflict with no

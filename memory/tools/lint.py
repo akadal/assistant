@@ -166,6 +166,22 @@ DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 WIKILINK_RE = re.compile(r"\[\[([^\]\|]+)(?:\|[^\]]+)?\]\]")
 FULLPATH_RE = re.compile(r"memory/[\w\-./]+\.md")
 
+HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+CODE_FENCE_RE = re.compile(r"```.*?```", re.S)
+INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+
+
+def linkable_text(text: str) -> str:
+    """Strip HTML comments and code spans before link checking.
+
+    A [[link]] or a path inside a code span, a fenced block or an HTML comment is
+    documentation *about* the syntax, not a pointer to be resolved. Without this, a file
+    that explains the link grammar -- every template ships one -- fails lint on day one,
+    and the only way to make it pass is to stop documenting the grammar."""
+    text = HTML_COMMENT_RE.sub("", text)
+    text = CODE_FENCE_RE.sub("", text)
+    return INLINE_CODE_RE.sub("", text)
+
 
 def main() -> int:
     cfg = load_config()
@@ -241,11 +257,12 @@ def main() -> int:
         # Path checking belongs to the L1 routing surface; in the archive a path is history.
         if kind == "archive":
             continue
-        for m in WIKILINK_RE.finditer(text):
+        routing = linkable_text(text)
+        for m in WIKILINK_RE.finditer(routing):
             target = m.group(1).strip()
             if target not in all_ids:
                 err(f"{r}: [[{target}]] has no target (no such id/file)")
-        for m in FULLPATH_RE.finditer(text):
+        for m in FULLPATH_RE.finditer(routing):
             if not (MEMORY.parent / m.group(0)).exists():
                 err(f"{r}: full-path target does not exist: {m.group(0)}")
 
