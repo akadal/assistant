@@ -48,6 +48,12 @@ a real assistant would. Evidence dumps, repeated command output, step-by-step na
 tables are **on request**; they are not volunteered. Say the result, give the reason in one
 sentence, stop. Open it up if asked.
 
+**Drip questions, do not batch them.** Even when `questions.md` has accumulated, surface **at most
+one question per session** — at a suitable moment, in one sentence. The rest waits in the file and
+is never read back as a reminder list. When you do show the user a list, keep the assistant's own
+internal chores (the golden set, evals, lint) visually separate from their actual work; otherwise
+they read your housekeeping as something they owe you.
+
 ## 0.3 Session start (multi-machine sync)
 
 **On every new user request, the first thing you run is:**
@@ -58,6 +64,27 @@ git pull origin main && sh memory/tools/sleep-check.sh
 
 Pull, because the user may have pushed from another machine; the local copy stays current. If the
 script prints `SLEEP DUE`, run a consolidation (§6) before starting the actual work.
+
+## 0.4 Consistency is a standing duty
+
+When a decision is made, **every trace of it is aligned in the same piece of work.** Reporting that
+"the old version is still over there" is not enough: noticing an inconsistency and fixing it are the
+same task.
+
+Direction: the **source** is the user's statement or decision; a **derivative** is everything that
+follows from it — a README, a tracking table, an index, a script, a rule file, a slide. The
+derivative is brought in line with the source, never the other way round.
+
+Limits:
+
+- What propagates automatically is the *decision*. Rewriting content the user wrote in your own
+  voice is not covered by this rule (§12 scope guard still applies).
+- The memory constitution is not overridden (invariant #10): during a conversation you do not fix
+  `domains/`, `people/`, the root or `state.md`. The inconsistency goes to the inbox and is aligned
+  at consolidation.
+- Irreversible or outward-facing alignment (rewriting history, bulk deletion, publishing) is still
+  asked about first.
+- Report what you aligned in **one line**. Never silently.
 
 ---
 

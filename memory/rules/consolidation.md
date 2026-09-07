@@ -2,7 +2,7 @@
 
 This file is read **only during a consolidation run** (`docs/DESIGN.md` §5.2). It is triggered by
 hand (`/sleep`, or just "run a consolidation"), or opportunistically at the start of a session
-(`AGENTS.md` §0.2).
+(`AGENTS.md` §0.3).
 
 ## Flow (mechanical wrapper around one LLM pass)
 

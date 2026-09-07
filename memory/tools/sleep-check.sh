@@ -1,5 +1,5 @@
 #!/bin/sh
-# sleep-check.sh — mechanises the opportunistic consolidation trigger (AGENTS.md §0.2, §6).
+# sleep-check.sh — mechanises the opportunistic consolidation trigger (AGENTS.md §0.3, §6).
 #
 # Rule: if there IS an unprocessed log in the inbox and the last consolidation was more than
 # 24 hours ago, run a consolidation before starting the real work.
