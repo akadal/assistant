@@ -44,10 +44,25 @@ If you review one file in this directory before trusting it, review that one.
    If the browser is on another device, or the agent runs in a container, use the two-step
    manual mode: `--manual-start`, then `--manual-finish "<the URL from the address bar>"`.
 
-4. Record the tap in `memory/secret/sources.md` so consolidation knows to run it (the format is in
+4. **Publish the app.** On the OAuth consent screen (newer consoles: *Google Auth Platform →
+   Audience*), move the publishing status from **Testing** to **In production**.
+
+   This step is not optional for a tap you want to keep. While an app sits in Testing, Google
+   revokes its refresh tokens after **seven days** — the integration works all week and then dies
+   with `invalid_grant`, which looks like a code bug and is not one. Publishing stops the clock.
+
+   You do not need Google's verification review for your own account: the consent screen will warn
+   that the app is unverified, and you click through *Advanced → Go to <app> (unsafe)*. Verification
+   is about letting *other people* use the app.
+
+5. Record the tap in `memory/secret/sources.md` so consolidation knows to run it (the format is in
    `memory/secret/README.md`).
 
 Both credential files live under `memory/secret/`, which is gitignored by default.
+
+A refresh token can still die later — you revoke it, six months pass without use, you change your
+account password, or one client accumulates more than 100 tokens for the account. Re-running
+`auth.py` is the fix in every case.
 
 ## Using it
 

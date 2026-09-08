@@ -5,6 +5,7 @@ Credentials live under memory/secret/ and are never written back out of it.
 """
 import json
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -39,9 +40,23 @@ def access_token():
         "client_id": cid, "client_secret": csec,
         "refresh_token": t["refresh_token"], "grant_type": "refresh_token",
     }).encode()
-    with urllib.request.urlopen(urllib.request.Request(
-            "https://oauth2.googleapis.com/token", data=data)) as r:
-        return json.loads(r.read())["access_token"]
+    try:
+        with urllib.request.urlopen(urllib.request.Request(
+                "https://oauth2.googleapis.com/token", data=data)) as r:
+            return json.loads(r.read())["access_token"]
+    except urllib.error.HTTPError as e:
+        try:
+            reason = json.loads(e.read().decode() or "{}").get("error") or f"HTTP {e.code}"
+        except ValueError:
+            reason = f"HTTP {e.code}"
+        if reason == "invalid_grant":
+            raise SystemExit(
+                "Google refresh token rejected (invalid_grant): it expired or was revoked.\n"
+                "If your OAuth app is still in Testing, Google kills refresh tokens after 7 days "
+                "-- publish the app (see this directory's README) and authorise once more:\n"
+                "  python3 memory/tools/integrations/google/auth.py"
+            ) from None
+        raise SystemExit(f"Google token refresh failed: {reason}") from None
 
 
 def api(url, token, method="GET", body=None, params=None):
