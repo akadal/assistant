@@ -43,6 +43,14 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
+# Some Windows consoles default to a legacy codepage and mangle the dashes and arrows in the
+# authorisation instructions, which makes them unreadable (same pattern as _api.py).
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
 SECRET = Path(__file__).resolve().parents[3] / "secret"
 CLIENT = SECRET / "google-oauth-client.json"
 TOKEN = SECRET / "google-token.json"
