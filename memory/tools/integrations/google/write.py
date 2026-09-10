@@ -26,11 +26,13 @@ Usage:
   python3 write.py event --title "..." --start 2026-09-03T14:00 \
       [--end ...] [--description ...] [--remind 60] [--email] [--tz ...] --confirm
   python3 write.py task --title "..." [--due 2026-09-15] [--description ...] --confirm
-  python3 write.py draft --to a@b.com --subject "..." --body "..." --confirm
+  python3 write.py draft --to a@b.com --subject "..." --body "..." \
+      [--attach path/file.pdf ...] --confirm
 """
 import argparse
 import base64
 import datetime as dt
+import mimetypes
 import os
 import sys
 import urllib.error
@@ -136,6 +138,24 @@ def draft(a, tok):
     m["Subject"] = a.subject
     m.set_content(a.body)
     print(f"DRAFT: → {a.to}  \"{a.subject}\"  ({len(a.body)} characters)")
+    # Attachments are embedded in the raw MIME message. Gmail's drafts.create
+    # endpoint (no uploadType) takes roughly 5 MB of raw body, and base64 grows
+    # the payload by ~4/3 — so stop above 3.5 MB of source bytes and say why,
+    # instead of letting the API return an opaque 400.
+    total = 0
+    for path in (a.attach or []):
+        f = Path(path)
+        if not f.is_file():
+            sys.exit(f"ERROR: attachment not found: {path}")
+        data = f.read_bytes()
+        total += len(data)
+        kind, _ = mimetypes.guess_type(f.name)
+        maintype, subtype = (kind or "application/octet-stream").split("/", 1)
+        m.add_attachment(data, maintype=maintype, subtype=subtype, filename=f.name)
+        print(f"  attachment: {f.name}  ({len(data) // 1024} KB, {maintype}/{subtype})")
+    if total > 3_500_000:
+        sys.exit(f"ERROR: attachments too large ({total // 1024} KB); the Gmail draft "
+                 "endpoint takes about 5 MB of base64 body. Shrink the file or link it.")
     print("  NOTE: this only creates a draft; this tool has no send capability.")
     if not a.confirm:
         return print("dry run — add --confirm to apply")
@@ -171,6 +191,8 @@ def main():
     d.add_argument("--to", required=True)
     d.add_argument("--subject", required=True)
     d.add_argument("--body", required=True)
+    d.add_argument("--attach", action="append", metavar="PATH",
+                   help="file to attach; may be given more than once")
     d.add_argument("--confirm", action="store_true")
 
     a = ap.parse_args()
