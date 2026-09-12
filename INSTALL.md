@@ -43,8 +43,12 @@ Then verify three things, and stop to resolve anything that fails:
    check. If it is public, say so plainly and stop: a public memory core exposes everything they
    are about to tell you. Do not continue until it is private or they explicitly, knowingly accept
    the risk in their own words.
-3. **Python 3 is available** (`python3 --version`, or `python --version` on Windows). If it is not,
-   note that `lint.py` and `eval.py` will not run; everything else still works. Do not block on it.
+3. **Python 3 is available** — and actually *runs*. Do not settle for `command -v python3`: on
+   Windows that name is usually a Microsoft Store "app execution alias" stub, so the lookup
+   succeeds while running it prints `Python was not found…` and exits **49**. Test by executing it:
+   `python3 -c "import sys"`, falling back to `python` and then `py`. Whichever one exits 0 is the
+   interpreter to use in the commands you give them. If none works, note that `lint.py` and
+   `eval.py` will not run; everything else still works. Do not block on it.
 
 ### Step 1 — Language
 
