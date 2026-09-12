@@ -25,6 +25,12 @@ Scopes:
     WARNING: Google has no "write a draft but never send" scope; gmail.compose is also
     allowed to send. The guarantee comes from the code in this directory: write.py
     contains NO call to messages.send or drafts.send, and none may be added.
+  drive.readonly   → READ Drive (documents live there, and a synced local Drive folder is
+    not always readable — macOS TCC denies it to some processes). Read-only: this scope
+    cannot write, and drive.py contains no write call.
+
+Re-run this script whenever the scope list changes: an existing refresh_token carries the
+old set of scopes, and a new scope does not work until it is approved.
 """
 import argparse
 import base64
@@ -60,6 +66,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/tasks",
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.compose",
+    "https://www.googleapis.com/auth/drive.readonly",
 ]
 
 
@@ -151,7 +158,7 @@ def manual_finish(cid, csec, given):
         INTERIM.unlink(missing_ok=True)
 
 
-def local(cid, csec):
+def local(cid, csec, wait=300):
     verifier, challenge = pkce()
     state = secrets.token_urlsafe(16)
     port = free_port()
@@ -177,14 +184,14 @@ def local(cid, csec):
     srv = http.server.HTTPServer(("127.0.0.1", port), Handler)
     threading.Thread(target=srv.handle_request, daemon=True).start()
 
-    print("Open this address in a browser and approve it:\n\n" + url + "\n")
+    print("Open this address in a browser and approve it:\n\n" + url + "\n", flush=True)
     try:
         webbrowser.open(url)
     except Exception:
         pass
-    print("Waiting for approval...")
-    srv.socket.settimeout(300)
-    for _ in range(300):
+    print(f"Waiting for approval ({wait} s)...", flush=True)
+    srv.socket.settimeout(wait)
+    for _ in range(wait):
         if box:
             break
         time.sleep(1)
@@ -200,6 +207,9 @@ def main():
                     help="manual mode step 1: print the authorisation link")
     ap.add_argument("--manual-finish", metavar="URL",
                     help="manual mode step 2: hand back the returned URL or code")
+    ap.add_argument("--wait", type=int, default=300, metavar="SEC",
+                    help="how long local mode waits for approval (default 300; a human "
+                         "approving in a browser can take longer than that)")
     a = ap.parse_args()
     cid, csec = client()
     if a.manual_start:
@@ -207,7 +217,7 @@ def main():
     elif a.manual_finish:
         manual_finish(cid, csec, a.manual_finish)
     else:
-        local(cid, csec)
+        local(cid, csec, a.wait)
 
 
 if __name__ == "__main__":

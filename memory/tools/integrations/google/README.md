@@ -1,6 +1,6 @@
 # Google integration — optional
 
-A read tap for Calendar, Tasks and Gmail, plus a write path that **cannot send mail**. It is off
+A read tap for Calendar, Tasks, Gmail and Drive, plus a write path that **cannot send mail**. It is off
 until you configure it, and nothing in the memory core depends on it.
 
 Standard library only, like everything else here. It talks to Google's REST APIs directly rather
@@ -14,6 +14,7 @@ assistant — an MCP server binds you to one harness.
 | `auth.py` | — | One-time OAuth. A human approves it in a browser. |
 | `fetch.py` | read | Upcoming events, open tasks, unread mail → an inbox summary. Runs at step 0 of a consolidation. |
 | `write.py` | write | Calendar event, Google Task, or a Gmail **draft**. Nothing happens without `--confirm`. |
+| `drive.py` | read | Search, list and download files from Drive. Read-only scope, no write call. |
 
 `fetch.py` writes summaries, never raw dumps: an event line for the calendar, due date plus title
 for tasks, sender plus subject for mail. Everything it captures goes through the inbox gate like
@@ -29,8 +30,9 @@ If you review one file in this directory before trusting it, review that one.
 
 ## Setup
 
-1. **Google Cloud Console** → create a project → enable the Calendar API, the Tasks API and the
-   Gmail API.
+1. **Google Cloud Console** → create a project → enable the Calendar API, the Tasks API, the
+   Gmail API and, if you want `drive.py`, the Drive API. An API you forget to enable fails later
+   with a 403 that names the missing API — that 403 is about the *project*, not about your scopes.
 2. **Credentials → OAuth client ID → Desktop app** → download the JSON and save it as
    `memory/secret/google-oauth-client.json`.
 3. Authorise once:
@@ -81,6 +83,17 @@ python3 memory/tools/integrations/google/write.py event \
 python3 memory/tools/integrations/google/write.py event \
   --title "Dentist" --start 2026-09-20T10:00 --confirm
 ```
+
+```bash
+# Drive: find a file, then pull it down to a local path
+python3 memory/tools/integrations/google/drive.py --search "week01"
+python3 memory/tools/integrations/google/drive.py \
+  --download "Teaching/Courses/Intro/week01.html" --dest ./week01.html
+```
+
+`drive.py` exists because a synced Drive folder is not a reliable path: on macOS the file-access
+prompt is granted per process, so one session reads the folder and the next gets *Operation not
+permitted*. Going through the API removes the machine from the equation.
 
 `--stdout` matters more than it looks: without it, a look at the start of every session would pile
 another block into the inbox, and consolidation would keep re-distilling the same calendar.
