@@ -141,7 +141,9 @@ memory/
 ## 5. Write protocol (summary — full version in docs/DESIGN.md §5)
 
 - Something worth remembering came up → append it as a `## HH:MM` block to
-  `memory/inbox/<YYYY-MM-DD>--<machine>.md`, and **only** there. No classification field; sorting
+  `memory/inbox/<YYYY-MM-DD>--<machine>.md`, and **only** there. If the file is being
+  created for the day, open it **with frontmatter** (`type: log`, `date`, `machine`) — lint
+  fails without it. No classification field; sorting
   is consolidation's job. Read the machine alias from `memory/.machine`.
 - Long raw content (a transcript, a document) goes straight into `memory/archive/<domain>/YYYY/`;
   the inbox gets a one- or two-sentence summary plus the path.
