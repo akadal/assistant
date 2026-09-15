@@ -570,7 +570,7 @@ commit message, renaming is close to forbidden anyway, and embedding is a v2 con
 
 ### 10.1 The golden set (primary, and the only set)
 
-**20 questions** from your own life, versioned in git, where an old question is never deleted:
+**20+ questions** from your own life, versioned in git, where an old question is never deleted:
 
 | Category | Count | Note |
 |---|---|---|
@@ -749,3 +749,37 @@ always a move, never a deletion (§5.4).
    measurement shows the load is unnecessary.)
 3. How automatic should inbox capture be in the harness — a summary at the end of each session, or
    in the moment? To be settled by trying it in v1.
+
+---
+
+## 12. What 25 days of running this taught us [2026-09-15]
+
+The reference deployment ran v1 for 25 days and measured it. The core claim held: L1 grew from
+42 files / 23 KB to 70 files / 102 KB, and **the cost per query stayed flat** (~7 KB — one index
+plus at most two files). Three things did not work, and each fix follows the same shape.
+
+**1. Budgets silently became ceilings.** `consolidation.md` had said "budgets are targets, not
+ceilings; aggressive distillation is lossless" from day one. After 25 days, 20 of 61 topic files
+sat in the top 5% band of the ceiling, **none went over**, and two sat exactly at it. Consolidation
+was optimising "do not turn the lint red" rather than "distil" — and because lint was green, nobody
+saw it. The lesson generalises: **a prose rule does not change behaviour where no mechanism checks
+it.** The fix is `sleep-audit.py`'s BLOAT and RATCHET checks plus a per-run compression quota.
+
+**2. Unattended sleep had no quality gate.** Once the nightly scheduled run was enabled, the human
+diff review disappeared and nothing replaced it. `sleep-audit.py` became the second gate after
+lint. Note how it was validated: the first version compared only *date stamps*, and it **failed its
+own negative test** — deleting three dated lines left it green because another line carried the
+same date. It now compares content. **Writing a guard is not enough; you have to try to break it.**
+
+**3. The question queue froze.** A five-item cap plus a one-question-per-session drip rule meant the
+same five questions sat untouched for eleven days, four of them tied to classes that started in the
+meantime. A cap does not shrink a human-facing queue, it freezes it. The cap is gone;
+`question-pick.py` picks by effective due date and consolidation closes overdue items with an
+explicit status quo.
+
+Two further mechanisms came out of the same review. **Rule routing** moves rules out of the
+always-loaded router into `memory/rules/`, which only works because lint now catches an *orphan
+rule* (a rule file the router never names) and an *orphan tool* (a script missing from
+`tools/_index.md`) — a capability that dies quietly is a bug, not a silent gap. And the
+**inflation brake** mechanises the trigger rather than the judgement: `AGENTS.md` carries a lint
+budget, so once it is red, a new rule cannot be added until an old one comes out.

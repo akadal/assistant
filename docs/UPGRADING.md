@@ -41,3 +41,41 @@ it belongs upstream, where everyone gets it. See [`../CONTRIBUTING.md`](../CONTR
 If you changed how *your* memory is organised — your domains, your budgets, your golden set — that
 is yours and stays local. Expect a small conflict on the files you have customised whenever you
 pull; resolve it in favour of the reasoning, not the diff.
+
+---
+
+## Breaking changes
+
+### 2026-09-15 — `questions.md` lost its item cap and gained a grammar
+
+**What changed.** The five-item cap on `memory/questions.md` is gone, and lint now checks each
+item against a grammar instead of counting items. A cap does not shrink a question queue — it
+freezes it, and an unasked question that gets dropped never comes back. Trimming compresses in
+L1's distilled facts; in a human-facing queue it destroys.
+
+**Why you have to act.** `questions.md` is yours, so an upgrade does not rewrite it — but the new
+lint rule will flag every existing line. Rewrite each item as:
+
+```
+- [YYYY-MM-DD] <kind> · due YYYY-MM-DD · asked N — **Question?** Status quo: <what happens if unanswered> → memory/<path>
+```
+
+`<kind>` is `approval`, `conflict`, or `fact`; `due` and `asked` are optional. While you are at it,
+move anything that is a *decision or a task* into `todo.md` — that queue is waiting to be done, not
+answered. In the reference deployment three of five queued "questions" turned out to be decisions,
+and they had sat in the wrong queue for eleven days.
+
+**What you gain.** `memory/tools/question-pick.py` surfaces one question per session by effective
+due date, and consolidation closes overdue ones with an explicit status quo. The queue drains by
+itself instead of silently rotting.
+
+### 2026-09-15 — a second commit gate
+
+`memory/tools/sleep-audit.py` now runs alongside `lint.py` before every consolidation commit, and
+`sleep-run.sh` invokes it. If you have customised `rules/consolidation.md` or the runner prompt,
+add the second gate yourself — an unattended run with no audit is exactly the configuration this
+tool exists to prevent.
+
+New lint budgets also apply to the mechanism itself (`router`, `rule`, `tool_index`). If your
+`AGENTS.md` is larger than the ceiling, lint will say so; that is the inflation brake working, not
+a bug. Move a rule under `memory/rules/` and name it in the routing table.
