@@ -4,10 +4,15 @@
 Usage:
   python3 eval.py run      # walks the questions in golden-set.md interactively
   python3 eval.py report   # prints summary metrics from eval-log.csv
+  python3 eval.py record <Qn> <category> <language> <0|1> <turns> <tokens> ["note"]
 
 How a run works: each question is shown, you (or the assistant) produce the answer, and a
 HUMAN enters the score. Grade by hand for the first three months — an LLM judge makes it far
 too easy to fool yourself; promote one only once it agrees with you ≥90% of the time.
+
+`run` blocks on input() for every question, which an assistant running unattended cannot
+answer — use `record` to log a score it already produced. A measurement tool that is too
+expensive to run does not get run, and then nothing is measured at all.
 
 Each record: date, question id, category, language, correct (0/1), turns, tokens, note.
 The north star — accuracy divided by median effective cost — is reported as a single number.
@@ -34,7 +39,8 @@ for _s in (sys.stdout, sys.stderr):
         pass
 
 FIELDS = ["date", "question_id", "category", "language", "correct", "turns", "tokens", "note"]
-CATEGORIES = ("single-fact", "synthesis", "temporal", "update", "abstention", "confusion-trap")
+CATEGORIES = ("single-fact", "synthesis", "temporal", "update", "abstention", "confusion-trap",
+              "protocol")
 
 # docs/DESIGN.md §10.2 — v1 thresholds
 THRESHOLDS = {
@@ -50,7 +56,7 @@ def load_questions() -> list[dict]:
     text = GOLDEN.read_text(encoding="utf-8")
     out = []
     for m in re.finditer(
-        r"^## (Q\d+)\s*\n.*?category:\s*(\S+).*?language:\s*(\S+).*?question:\s*(.+?)\n.*?expected:\s*(.+?)(?:\n##|\n---|\Z)",
+        r"^## (Q\d+)\s*\n.*?category:\s*(\S+).*?language:\s*(\S+).*?question:\s*(.+?)\n.*?expected:\s*(.+?)(?=\n## Q|\n---|\Z)",
         text, re.S | re.M,
     ):
         out.append({
@@ -97,6 +103,29 @@ def cmd_run() -> int:
     return 0
 
 
+def cmd_record() -> int:
+    """Non-interactive logging, for an assistant that has already produced and scored an answer.
+
+    Usage: eval.py record <Qn> <category> <language> <0|1> <turns> <tokens> ["note"]
+    """
+    a = sys.argv[2:]
+    if len(a) < 7:
+        print('usage: eval.py record <Qn> <category> <language> <0|1> <turns> <tokens> ["note"]')
+        return 1
+    is_new = not LOG.exists()
+    with LOG.open("a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        if is_new:
+            w.writeheader()
+        w.writerow({
+            "date": date.today().isoformat(), "question_id": a[0], "category": a[1],
+            "language": a[2], "correct": int(a[3]), "turns": int(a[4]), "tokens": int(a[5]),
+            "note": a[6] if len(a) > 6 else "",
+        })
+    print(f"recorded: {a[0]} correct={a[3]} turns={a[4]} tokens={a[5]}")
+    return 0
+
+
 def cmd_report() -> int:
     if not LOG.exists():
         print("No eval-log.csv yet — run 'run' first.")
@@ -108,7 +137,13 @@ def cmd_report() -> int:
     latest: dict[str, dict] = {}
     for r in rows:  # keep only the most recent run per question
         latest[r["question_id"]] = r
-    rs = list(latest.values())
+
+    # Retired questions stay out of the report. An abstention question dies the day the fact
+    # enters memory: the answer becomes correct, the category silently inflates, and you stop
+    # testing for made-up answers without noticing. The row stays in the log (nothing is ever
+    # deleted); it just no longer counts.
+    retired = {q["id"] for q in load_questions() if "[retired" in q["expected"]}
+    rs = [r for qid, r in latest.items() if qid not in retired]
     n = len(rs)
     accuracy = sum(int(r["correct"]) for r in rs) / n
     turns = [int(r["turns"]) for r in rs]
@@ -117,6 +152,8 @@ def cmd_report() -> int:
 
     print(f"\n=== Golden-set report ({date.today().isoformat()}) ===")
     print(f"Questions      : {n} (target: 20)")
+    if retired:
+        print(f"Retired        : {', '.join(sorted(retired, key=lambda s: int(s[1:])))} (not counted)")
     print(f"Accuracy       : {accuracy*100:.0f}% (v1 threshold: {THRESHOLDS['accuracy']*100:.0f}%)")
     print(f"Median turns   : {median_turns:.1f} (single-fact target ≤{THRESHOLDS['single_fact_median_turns']})")
     print(f"Median tokens  : {statistics.median(tokens):.0f} (single-fact target ≤1000)")
@@ -131,4 +168,4 @@ def cmd_report() -> int:
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "run"
-    sys.exit({"run": cmd_run, "report": cmd_report}.get(cmd, cmd_run)())
+    sys.exit({"run": cmd_run, "report": cmd_report, "record": cmd_record}.get(cmd, cmd_run)())
