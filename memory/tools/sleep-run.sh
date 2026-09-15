@@ -129,5 +129,5 @@ COMMAND=$(sleep_command)
 # If your harness runs session hooks, guard them so this nested call does not re-trigger them.
 printf '%s' "$PROMPT" | sh -c "$COMMAND" >> "$LOG" 2>&1
 CODE=$?
-log "consolidation finished (harness exit $CODE)"
+[ "$CODE" -eq 0 ] && log "consolidation finished" || log "ERROR consolidation harness exit $CODE — see the end of this log"
 exit 0
