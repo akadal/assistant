@@ -45,7 +45,7 @@ for a in "$@"; do
 done
 
 mkdir -p "$STATE"
-log() { echo "$(date '+%F %T') $*" >> "$LOG"; [ -n "$DRY" ] && echo "$*"; }
+log() { echo "$(date '+%F %T') $*" >> "$LOG"; [ -n "$DRY" ] && echo "$*"; return 0; }
 
 # Harness command, per machine. Reads the prompt on stdin, writes plain text to stdout.
 # Priority: ASSISTANT_SLEEP_COMMAND > memory/.sleep-command (gitignored) > default.
@@ -129,5 +129,9 @@ COMMAND=$(sleep_command)
 # If your harness runs session hooks, guard them so this nested call does not re-trigger them.
 printf '%s' "$PROMPT" | sh -c "$COMMAND" >> "$LOG" 2>&1
 CODE=$?
-[ "$CODE" -eq 0 ] && log "consolidation finished" || log "ERROR consolidation harness exit $CODE — see the end of this log"
+if [ "$CODE" -eq 0 ]; then
+  log "consolidation finished"
+else
+  log "ERROR consolidation harness exit $CODE — see the end of this log"
+fi
 exit 0
