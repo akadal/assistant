@@ -229,7 +229,13 @@ def check_bloat_and_ratchet(d: dict, target: str | None) -> None:
 
 def check_l2(d: dict, target: str | None) -> None:
     for status, old, new in d["files"]:
-        if status.startswith("D") and old.startswith("memory/") and not old.startswith("memory/inbox/"):
+        # "There is no deletion" is about memory CONTENT: fact files, the archive, entities.
+        # Operational state (dotfiles under memory/, such as memory/.sleep-lock) and logs moving
+        # out of inbox are outside it — releasing the lock IS the protocol (§6), not a breach.
+        # The first version counted the lock and turned every sleep commit red; it did not show up
+        # in the pre-commit check because the lock is still held at that moment.
+        operational = old.startswith("memory/.") or old.startswith("memory/inbox/")
+        if status.startswith("D") and old.startswith("memory/") and not operational:
             errors.append(f"L2           {old}: deleted — there is no deletion (invariant #5)")
         if status.startswith("R") and old.startswith("memory/inbox/"):
             if not new.startswith("memory/archive/inbox/"):
