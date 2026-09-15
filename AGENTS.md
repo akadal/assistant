@@ -111,7 +111,7 @@ memory/
 ├── people/              # person/organisation entity files + _index.md (alias table)
 ├── archive/             # L2 raw layer: archive/inbox/ + archive/<domain>/YYYY/
 ├── secret/              # never enters consolidation or embeddings; humans only
-└── tools/               # lint.py, eval.py, sleep-check.sh, golden-set.md
+└── tools/               # lint.py, eval.py, sleep-check.sh, sleep-run.sh, golden-set.md
 ```
 
 ## 3. Constitution — 10 invariants (docs/DESIGN.md §9)
@@ -155,10 +155,23 @@ memory/
 
 ## 6. Consolidation (opportunistic trigger; task definition in `rules/consolidation.md`)
 
-**Trigger:** there is no cron job and no scheduled task — the system has to stay portable across
-machines and across AI harnesses. Two triggers: (a) the user asks for it; (b) the opportunistic
-rule — at session start, if `inbox/` is non-empty and the last consolidation (newest file in
-`archive/inbox/`) was more than 24 hours ago, a consolidation happens before the real work.
+**Trigger — three ways:** (a) the user asks for it; (b) the opportunistic rule — at session start,
+if `inbox/` is non-empty and the last consolidation (newest file in `archive/inbox/`) was more than
+24 hours ago, a consolidation happens before the real work; (c) a nightly scheduled run —
+`sh memory/tools/sleep-run.sh` from cron, launchd or Task Scheduler, **on one machine only**. Every
+other machine keeps (a) and (b); duplicating the schedule turns the collision below into a nightly
+event.
+
+Portability is the reason this was once a no-cron design, and it survives: the scheduler calls a
+plain `sh` script, the script does no distilling (the rules stay in this file), and the harness
+command is swappable through `memory/.sleep-command`. The schedule does not replace the rule; it
+stops consolidation from depending on someone opening a session.
+
+**Lock — multi-machine:** if two machines consolidate at once, the same logs are distilled twice
+and the archive moves collide. The lock is shared through git — `memory/.sleep-lock` is committed
+and pushed when a run starts and deleted when it ends; a lock older than 2 hours is treated as a
+crashed run and taken over. The check lives in `sleep-check.sh`, not in prose: while a fresh lock
+exists, **no path** — manual, opportunistic or scheduled — starts a second consolidation.
 
 Flow: pre-flight (clean tree → `pre-sleep` checkpoint commit) → LLM pass (triage → sort → merge →
 compress → resolve conflicts → refresh indexes and `state.md`) → `python3 memory/tools/lint.py`
@@ -178,7 +191,13 @@ domain (threshold: ≥5 records on the same theme; at most one proposal per mont
   `tools/eval-log.csv`.
 - `memory/tools/golden-set.md` — the versioned question set; an old question is never removed.
 - `sh memory/tools/sleep-check.sh` — the opportunistic consolidation trigger; exit 0 means it is
-  due. It reads state from file names and never trusts mtime.
+  due. It reads state from file names and never trusts mtime, and reports "NOT DUE" while a fresh
+  `memory/.sleep-lock` exists (§6).
+- `sh memory/tools/sleep-run.sh [--dry-run] [--force]` — unattended consolidation runner (§6c). It
+  does no distilling: pull → trigger check → take the lock through git → call the harness headless
+  → release the lock. Log in `memory/tools/.state/sleep-run.log`; harness command from
+  `memory/.sleep-command` (per machine, gitignored). **The standalone CLI needs its own login** — a
+  desktop app's credentials are not inherited by a scheduled process.
 
 ## 8. Naming and formatting (short)
 

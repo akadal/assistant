@@ -28,3 +28,9 @@ __pycache__/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Hook/runner state — local to each machine (memory/tools/*.sh)
+memory/tools/.state/
+
+# Sleep harness command — local to each machine (sleep-run.sh, AGENTS.md §6)
+memory/.sleep-command
