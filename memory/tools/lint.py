@@ -132,6 +132,12 @@ def classify(path: Path) -> str | None:
     """File kind from its path: root | state | questions | todo | index | topic |
     entity | log | archive | None (not checked)."""
     r = rel(path)
+    if r == "AGENTS.md":
+        return "router"
+    if r == "memory/tools/_index.md":
+        return "tool_index"
+    if r.startswith("memory/rules/") and "templates" not in path.parts:
+        return "rule"
     if r == "memory/MEMORY.md":
         return "root"
     if r == "memory/state.md":
@@ -156,7 +162,10 @@ def expected_id(path: Path) -> str:
     """Expected ID. In sub-foldered files ID = <folder>-<file name> (rules/format.md):
     domains/learning/databases/week03.md -> databases-week03. Reason: names such as
     'week03' or 'overview' repeat across subjects; a bare file name breaks uniqueness."""
-    parts = path.relative_to(MEMORY).parts
+    try:
+        parts = path.relative_to(MEMORY).parts
+    except ValueError:      # AGENTS.md lives at the repo root, not under memory/
+        return path.stem
     if parts[0] == "domains" and len(parts) == 4:
         return f"{parts[2]}-{path.stem}"
     return path.stem
@@ -192,11 +201,15 @@ def main() -> int:
     enums = cfg.get("enums", {}) or {}
     budgets = cfg.get("budgets_chars", {}) or {}
     required = cfg.get("required", {}) or {}
-    questions_cap = budgets.get("questions_item_cap", 5)
+    questions_grammar = cfg.get("questions_grammar")
     todo_cap = budgets.get("todo_open_item_cap", 20)
 
     md_files = sorted(MEMORY.rglob("*.md"))
     md_files = [p for p in md_files if ".index" not in p.parts and "secret" not in p.parts]
+    md_files = [p for p in md_files if p.parent.name != "tools" or p.name == "_index.md"]
+    agents = MEMORY.parent / "AGENTS.md"          # the router lives at the repo root
+    if agents.exists():
+        md_files.append(agents)
 
     # id → file map (for link targets and the id == file-name check)
     all_ids = {expected_id(p) for p in md_files}
@@ -238,11 +251,19 @@ def main() -> int:
         if kind in ("root", "state", "questions", "todo") and fm is not None:
             warn(f"{r}: a {kind} file has frontmatter (not part of its contract)")
 
-        # questions.md item cap
-        if kind == "questions":
-            items = [ln for ln in body.splitlines() if ln.startswith("- ")]
-            if len(items) > questions_cap:
-                err(f"{r}: question cap exceeded ({len(items)}/{questions_cap})")
+        # questions.md: NO cap, grammar is checked instead.
+        # There used to be a 5-item cap and overflow questions were simply not asked. Measured
+        # result: the cap did not shrink the queue, it froze it (11 days, same five items), and an
+        # unasked question that got dropped never came back. Character budgets belong to L1's
+        # distilled facts, where trimming compresses; in a human-facing queue trimming destroys.
+        # The queue now shrinks by being drained (question-pick.py + the status-quo close).
+        if kind == "questions" and questions_grammar:
+            rx = re.compile(questions_grammar)
+            for ln in body.splitlines():
+                if not ln.startswith("- "):
+                    continue
+                if not rx.match(ln):
+                    err(f"{r}: malformed question line → {ln[:70]}")
 
         # todo.md open-item cap
         if kind == "todo":
@@ -276,7 +297,9 @@ def main() -> int:
 
         # --- Rule 3: character budgets ---
         bkey = {"root": "root", "state": "state", "index": "index",
-                "topic": "topic", "entity": "entity"}.get(kind)
+                "topic": "topic", "entity": "entity",
+                "router": "router", "rule": "rule",
+                "tool_index": "tool_index"}.get(kind)
         if bkey and bkey in budgets and budgets[bkey]:
             target_n, ceiling = budgets[bkey]
             n = len(text)
@@ -284,6 +307,34 @@ def main() -> int:
                 err(f"{r}: over budget ceiling ({n} chars > {ceiling})")
             elif target_n and n > target_n:
                 warn(f"{r}: over target budget ({n} chars > {target_n}) — compress at consolidation")
+
+    # --- Orphan rule check ---
+    # This is what makes rule routing safe. If a file under rules/ is never named by the router,
+    # it has no trigger: the capability dies silently — no error is raised, the work is simply
+    # done incompletely. That silent failure is the main risk of moving rules out of the
+    # always-loaded file, so it is checked mechanically.
+    agents_txt = (MEMORY.parent / "AGENTS.md").read_text(encoding="utf-8") if (MEMORY.parent / "AGENTS.md").exists() else ""
+    if agents_txt:
+        for p in sorted((MEMORY / "rules").rglob("*.md")):
+            if "templates" in p.parts:
+                continue
+            full = rel(p)
+            short = full[len("memory/"):]
+            if full not in agents_txt and short not in agents_txt:
+                err(f"{full}: orphan rule — not named in AGENTS.md, so it has no trigger")
+
+    # --- Orphan tool check ---
+    # The router points at tools/_index.md instead of listing tools itself (invariant #7, one home
+    # per fact). If the index goes stale, a new tool never shows up in the answer to "what do I
+    # have?" — it dies the same silent death.
+    idx_p = MEMORY / "tools" / "_index.md"
+    if idx_p.exists():
+        idx = idx_p.read_text(encoding="utf-8")
+        for t in sorted((MEMORY / "tools").iterdir()):
+            if t.suffix not in (".py", ".sh") or t.name.startswith("__"):
+                continue
+            if f"memory/tools/{t.name}" not in idx:
+                err(f"memory/tools/_index.md: {t.name} is missing — the capability dies silently")
 
     report()
     return 1 if errors else 0

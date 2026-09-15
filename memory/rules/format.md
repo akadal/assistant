@@ -37,7 +37,29 @@ No frontmatter. A static contract: identity (2–3 lines) + domain routing table
 
 ### `state.md` / `questions.md`
 
-No frontmatter. `state.md` is capped at ~200 tokens; `questions.md` caps at 5 items.
+No frontmatter. `state.md` is capped at ~200 tokens.
+
+`questions.md` has **no cap**. Character budgets belong to L1's *distilled facts* — trimming there
+compresses. The question queue is not L1; it faces a human, and trimming there **destroys** (an
+unanswered question that gets dropped does not come back). The queue shrinks by being **drained**,
+not trimmed: `tools/question-pick.py` surfaces one question per session, and consolidation closes
+whatever is overdue with an explicit status quo.
+
+Item grammar (checked by lint):
+
+`- [YYYY-MM-DD] <kind> · due YYYY-MM-DD · asked N — **Question?** Status quo: <what happens if unanswered> → memory/<path>`
+
+- `<kind>` is one of three: `approval` (an approval gate — entity merge, alias, unsourced loss, new
+  domain), `conflict` (sources disagree and the trust ladder cannot settle it), `fact` (something
+  only the owner knows).
+- `due` and `asked` are optional. Past the `due` date a question closes with its status quo even
+  if unanswered; once `asked` reaches 2 it stops surfacing and closes at the next consolidation.
+  Either way the close is written to the inbox and the fact survives marked `(?)` plus the status
+  quo note.
+- **Decisions and tasks do not belong here.** A design decision the owner has to make goes to
+  `todo.md`; those items are waiting to be *done*, not *answered*. The distinction is worth
+  enforcing: in the reference deployment three of five queued "questions" were actually the owner's
+  own decisions, and they sat in the wrong queue for 11 days.
 
 ### `todo.md` — a deliberately minimal task list
 
@@ -178,13 +200,16 @@ a path is *history*, not routing; a broken pointer is only a real fault in L1.
 lint-config:
   char_per_token: 4.0
   budgets_chars:        # [target, ceiling]; null = not checked
+    router: [14000, 18000]      # AGENTS.md — loaded every session; this is the inflation brake
+    rule:   [null, 22000]       # rules/*.md — loaded on demand, a ceiling is enough
+    tool_index: [null, 6000]    # tools/_index.md
     root:   [2000, 3200]
     state:  [null, 800]
-    questions_item_cap: 5
     todo_open_item_cap: 20
     index:  [1600, 2000]
     topic:  [1600, 2800]
     entity: [1000, 1600]
+  questions_grammar: "^- \[\d{4}-\d{2}-\d{2}\] (approval|conflict|fact)( · due \d{4}-\d{2}-\d{2})?( · asked \d+)? — "
   enums:
     type:   [index, topic, entity, log, archive]
     status: [active, paused, closed]

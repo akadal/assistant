@@ -65,6 +65,26 @@ git pull origin main && sh memory/tools/sleep-check.sh
 Pull, because the user may have pushed from another machine; the local copy stays current. If the
 script prints `SLEEP DUE`, run a consolidation (§6) before starting the actual work.
 
+## 0.4 Negative feedback is a learning loop
+
+When the user says some version of **"why didn't you do that / you forgot this / same mistake
+again / why is this still like that"**, that is negative feedback. Two things follow, and they are
+**separate**:
+
+1. **Fix the immediate work.** Whatever they asked for, do it (see the consistency rule below —
+   reporting the problem and leaving it is not enough). This always happens.
+2. **Drop a `(feedback)`-tagged block into the inbox — without classifying it.** Record their
+   sentence verbatim, one sentence on what actually happened, and leave the question open: *does
+   this call for a structural update?*
+
+**The agent captures; consolidation decides.** Do not reach for a rule in the moment, do not open a
+rule file, do not invent a check. **"No change was needed" is a legitimate and common outcome** —
+most mistakes are one-offs, and writing a rule for each one degrades the system (see the
+no-overengineering rule in §12). The triage thresholds live in `memory/rules/consolidation.md`.
+
+**No defensiveness.** Accept and fix first; give the reason afterwards, in one sentence. No long
+justifications, no listing of past errors.
+
 ## 0.4 Consistency is a standing duty
 
 When a decision is made, **every trace of it is aligned in the same piece of work.** Reporting that
@@ -182,22 +202,27 @@ Approval gates (proposals land in `questions.md`, they are not applied automatic
 entities, adding an alias, any change that drops content without a source, opening or closing a
 domain (threshold: ≥5 records on the same theme; at most one proposal per month).
 
-## 7. Tools
+## 7. Capabilities and rule routing
 
-- `python3 memory/tools/lint.py` — three rule classes: frontmatter/enum/required fields, link
-  targets + alias uniqueness, character budgets. Configured from the `lint-config` block in
-  `rules/format.md`.
-- `python3 memory/tools/eval.py` — golden-set runner; logs question, answer, turns and tokens to
-  `tools/eval-log.csv`.
-- `memory/tools/golden-set.md` — the versioned question set; an old question is never removed.
-- `sh memory/tools/sleep-check.sh` — the opportunistic consolidation trigger; exit 0 means it is
-  due. It reads state from file names and never trusts mtime, and reports "NOT DUE" while a fresh
-  `memory/.sleep-lock` exists (§6).
-- `sh memory/tools/sleep-run.sh [--dry-run] [--force]` — unattended consolidation runner (§6c). It
-  does no distilling: pull → trigger check → take the lock through git → call the harness headless
-  → release the lock. Log in `memory/tools/.state/sleep-run.log`; harness command from
-  `memory/.sleep-command` (per machine, gitignored). **The standalone CLI needs its own login** — a
-  desktop app's credentials are not inherited by a scheduled process.
+**Tool detail is not here: `memory/tools/_index.md`** — what each tool does and, more importantly,
+its **trigger** (when to run it). Ask that file "what do I have?"; do not add tool lines to this
+section (invariant #7, one home per fact). Lint enforces it: a tool missing from the index is an
+error.
+
+**Rule routing table.** When the trigger on the left appears, the file on the right is read
+**before starting the actual work**. This is a gate, not a suggestion:
+
+| Trigger | Canonical rule |
+|---|---|
+| consolidation / sleep run | memory/rules/consolidation.md |
+| schema · enum · budget · fact grammar question | memory/rules/format.md |
+
+Keep this table complete as you add rule files. Routing keeps the always-loaded router small, but
+it introduces one real risk: **a trigger that never fires makes the capability die silently** — no
+error is raised, the work is simply done incompletely. Three mechanical checks stand against that:
+lint's *orphan rule* check (every file under `rules/` must be named in this table), lint's
+*orphan tool* check (every script must appear in the tool index), and the index's trigger column,
+which cannot be left blank. Losing a capability quietly is a **bug** here, not a silent gap.
 
 ## 8. Naming and formatting (short)
 
@@ -257,5 +282,15 @@ For big coding or research tasks, to keep agent autonomy safe and to avoid *over
   than what was done. The code or text already holds the "what"; memory should hold the reasoning.
 - **Loop breaker.** If you hit the same error or blocker twice in a row, stop struggling: break the
   loop and hand it to the user (`questions.md` or a message).
+- **The evolution contract.** Neither over-constrained nor unconstrained: the repository should
+  evolve on its own without losing its character, breaking, or over-engineering. It must never lose
+  memory, never lose capabilities, and stay open to gaining new ones. In practice that splits
+  cleanly: the **never-lose** half is mechanical and has no tolerance (lint + `sleep-audit.py` +
+  an append-only L2); the **evolution** half stays free — no permission round is needed to add a
+  tool, a rule file, or a domain, only a trace. When a check blocks legitimate work, **calibrate
+  the check, do not curtail the work** (`sleep-audit.py` originally turned red over a 3-character
+  growth; a tolerance was added). And no capability may die quietly: when a rule moves behind a
+  trigger, the check that catches a *missed* trigger is built in the same change.
+
 - **Adversarial review.** For genuinely risky changes, brief a sub-agent whose only job is to find
   weak points, security holes and logic errors, and touch the main files only after that pass.

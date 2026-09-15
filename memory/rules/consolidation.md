@@ -19,13 +19,26 @@ hand (`/sleep`, or just "run a consolidation"), or opportunistically at the star
      3. Merge/update — follow the fact grammar; if you find a duplicate, turn it into a link (single-home).
      4. **COMPRESS** — as hard as you can. Budgets are targets, not ceilings. Because the raw data
         is still in the archive, aggressive distillation is lossless (`docs/DESIGN.md` §13.4).
+        **Quota:** every run pulls **at least three** files that sit above 90% of their ceiling
+        down to (or near) their target. This is not a new idea — the sentence above said it from
+        day one and was still ignored: in the reference deployment, 20 of 61 topic files ended up
+        in the 95-100% band with none over the ceiling, and two sat exactly at the ceiling. That
+        is "avoid the red", not "distil". Note also *where* the bloat is: moving text into
+        `## History` is usually the wrong move (those sections were 1.2 KB in total). Bloat comes
+        from operational detail — measurement narratives, command dumps, screen-by-screen flows.
+        Those go to `memory/archive/<domain>/YYYY/`, leaving a `←[[archive-id]]` marker in L1.
+        `sleep-audit.py` enforces this with its BLOAT and RATCHET checks.
      5. Resolve conflicts — using the ordered rules below.
      6. Refresh the `## Hot` / `## Files` blocks of every touched index; refresh `state.md`.
      7. Sweep `todo.md`: drop completed `[x]` items (the record lives in git); firm up the
         `[[link]]`s on the open ones.
-   - **Output:** file updates + `questions.md` items (cap: 5).
-3. **Lint (script):** `python3 memory/tools/lint.py` — if red, the model gets exactly one repair
-   attempt; if still red, abort (`git reset --hard pre-sleep`).
+   - **Output:** file updates + `questions.md` items (**no cap** — see the question queue section).
+3. **Two gates (scripts):** `python3 memory/tools/lint.py` **and**
+   `python3 memory/tools/sleep-audit.py` — both must be green before the commit. Lint checks the
+   schema; the audit checks the distillation itself (fabrication, loss, bloat, ratchet, L2
+   integrity). If either is red the model gets exactly one repair attempt; if still red, abort
+   (`git reset --hard pre-sleep`). Once sleep runs unattended, this pair replaces the human diff
+   review — it is not optional.
 4. **Close-out:** move the processed logs into `archive/inbox/` → one atomic commit (the message
    carries a cost figure and a `wc` size summary) → human diff review → `git push`.
 
@@ -49,6 +62,58 @@ making a 40k-token pass resumable.
 3. **Ask threshold:** a high-impact area (identity, relationships, health, finance) or two
    user statements close together in time → do not resolve automatically, ask. A fact awaiting an
    answer stays in the file marked `(?)`.
+
+## The question queue — how it drains
+
+`questions.md` has **no cap**. It shrinks by being drained, not trimmed, through three mechanisms:
+
+1. **Drip.** `tools/question-pick.py` picks exactly one question per session by effective due date
+   (the `due` date, or the written date + 30 days) and the session-start hook injects it.
+2. **Status-quo close.** Every run: any item whose `due` has passed, or that has been `asked`
+   twice, is **closed even without an answer**. The item leaves `questions.md`, the status-quo note
+   is written next to the `(?)` fact in the relevant file, and the close is logged to the inbox.
+   Silence is not a blocker.
+3. **The right queue.** Only things awaiting an *answer* belong here: `approval`, `conflict`,
+   `fact`. Decisions and tasks go to `todo.md`.
+
+A status-quo note is **not a decision**: it records what was assumed in the absence of an answer
+and stays marked `(?)`. A later statement from the owner overrides it (trust ladder).
+
+## Feedback triage
+
+Blocks tagged `(feedback)` in the inbox are triaged first. They are captured **without
+classification** — the agent records what was said and what happened; this file decides whether
+anything structural follows.
+
+| Situation | Response |
+|---|---|
+| The same complaint arrives a **second time** | **Structural change**: a rule, a tool, or a mechanical check. A prose warning is not enough — it was already written the first time. |
+| First time, but the cause is a **mechanism gap** (no rule, no trigger, no check) | Structural change. |
+| First time, cause was a **one-off slip** | Record the fact; write no rule. If it repeats it moves up a row. |
+| The complaint is a **preference** (tone, format, scope) | Goes to the preferences file, not to a rule file. |
+| The complaint was fair but the **system was already right** | **Write nothing.** The block is archived and no rule changes. |
+
+Repeat detection is mechanical and needs no separate register file:
+
+```
+rg -n "\(feedback\)" memory/archive/inbox/ memory/inbox/
+```
+
+The archive is already a permanent, append-only record (invariant #1); a second counter file would
+be the same fact's second home (invariant #7) and would go stale.
+
+**The default outcome is "no change."** A structural update has to earn itself: either there is a
+match in the archive (a repeat) or a demonstrable mechanism gap. With neither, close the block and
+leave the rule files alone. Writing a rule "just in case" is a mistake in this system.
+
+**Inflation brake — mechanise the trigger, not the judgement.** `AGENTS.md` carries a lint budget.
+While it is over target, adding a new operating rule requires answering, explicitly, *which old
+rule was absorbed or died?*; if the ceiling is red, **nothing new goes in until something comes
+out** — zero-sum. Two classes of rule are death candidates: (a) one whose enforcement moved into a
+mechanism (the prose collapses to a single line), and (b) a one-off incident rule with no repeat
+(the rationale goes to the archive, one sentence stays). This matters because the feedback loop is
+exactly what inflates a router: in the reference deployment `AGENTS.md` grew 5.2× in 25 days and
+this loop was the main driver. The loop is valuable; the unchecked version of it is not.
 
 ## Approval gates (the default — not applied automatically; they land in `questions.md` as a diff)
 
