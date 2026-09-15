@@ -14,7 +14,8 @@ Five checks, all diff-based (no LLM):
   2. LOSS        — a removed dated line's CONTENT must survive (same file, History, or archive).
   3. BLOAT       — the number of files in the ceiling band must not grow.
   4. RATCHET     — a file pressed against the ceiling may not grow at all.
-  5. L2          — archive is append-only; nothing under memory/ is deleted.
+  5. L2          — archive is append-only; memory *content* is never deleted (operational
+                   state such as memory/.sleep-lock is outside that rule).
 
 Usage:
   python memory/tools/sleep-audit.py            # working tree vs HEAD (before committing)
