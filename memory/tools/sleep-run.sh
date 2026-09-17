@@ -71,9 +71,17 @@ domain) — write it into memory/questions.md and carry on. Leave memory/.sleep-
 Ask nothing, wait for no approval. Print a one-paragraph summary when you are done.'
 
 # --- 1. be current --------------------------------------------------------
+# --ff-only alone is not enough. Across several machines a failed push leaves an
+# orphan commit behind and the branch diverges; --ff-only then says "Not possible to
+# fast-forward" and gives up, so sleep would never run again on that machine. Our
+# commits are append-only markdown on a single branch, so rebasing is safe.
 if ! git pull --ff-only origin main >/dev/null 2>&1; then
-  log "ERROR pull failed (dirty tree or no network) — run aborted"
-  exit 2
+  if ! git pull --rebase --autostash origin main >/dev/null 2>&1; then
+    git rebase --abort >/dev/null 2>&1
+    log "ERROR pull failed (real conflict or no network) — run aborted"
+    exit 2
+  fi
+  log "branch had diverged; rebased onto origin/main"
 fi
 
 # --- 2. is it due ---------------------------------------------------------
@@ -109,7 +117,7 @@ git commit -q -m "sleep lock: $MACHINE" >/dev/null 2>&1
 if ! git push -q origin main >/dev/null 2>&1; then
   # Race: someone pushed in between. Back off and look again.
   git reset --hard HEAD~1 >/dev/null 2>&1
-  git pull --ff-only origin main >/dev/null 2>&1
+  git pull --ff-only origin main >/dev/null 2>&1     || git pull --rebase --autostash origin main >/dev/null 2>&1     || git rebase --abort >/dev/null 2>&1
   if [ -f "$LOCK" ]; then
     log "STOP: lost the race to $(sed -n 's/^machine=//p' "$LOCK")"
     exit 1
@@ -119,7 +127,7 @@ if ! git push -q origin main >/dev/null 2>&1; then
 fi
 
 release() {
-  git pull --ff-only origin main >/dev/null 2>&1
+  git pull --ff-only origin main >/dev/null 2>&1     || git pull --rebase --autostash origin main >/dev/null 2>&1     || git rebase --abort >/dev/null 2>&1
   [ -f "$LOCK" ] || return 0
   rm -f "$LOCK"
   git add -A -- "$LOCK" >/dev/null 2>&1

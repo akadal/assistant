@@ -59,11 +59,21 @@ they read your housekeeping as something they owe you.
 **On every new user request, the first thing you run is:**
 
 ```bash
-git pull origin main && sh memory/tools/sleep-check.sh
+git pull --rebase --autostash origin main && sh memory/tools/sleep-check.sh
 ```
 
 Pull, because the user may have pushed from another machine; the local copy stays current. If the
 script prints `SLEEP DUE`, run a consolidation (§6) before starting the actual work.
+
+**Use `--rebase`, never `--ff-only`.** When a push from one machine fails it leaves an orphan
+commit behind and the branch diverges. `--ff-only` then aborts with "Not possible to fast-forward"
+and **gives up**, so the session carries on reading stale files — which is worse than stopping,
+because nothing looks wrong. Our commits are append-only markdown on a single branch, so rebasing
+is safe. If a push fails, rebase and retry once rather than leaving the commit behind.
+
+**Staleness is never passed over in silence.** If the pull cannot be made to work at all (no
+network, a real conflict), the copy is **stale**: treat everything you read from memory as suspect,
+resolve the divergence before writing anything, and tell the user in one sentence.
 
 ## 0.4 Negative feedback is a learning loop
 
