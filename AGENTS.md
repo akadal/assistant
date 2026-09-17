@@ -1,22 +1,21 @@
 # AGENTS.md — router
 
-This repository is a **personal memory core** ("a brain") for an AI assistant. The full design
-contract lives in `docs/DESIGN.md` — go there when you need the reasoning behind a rule. This file
-is the single entry point for the operating rules that every agent (and human) working in this
-repository follows.
+This repository is a **personal memory core** ("a brain") for an AI assistant. `docs/DESIGN.md`
+holds the full design contract — go there for the reasoning behind a rule. This file is the single
+entry point for the operating rules every agent (and human) working here follows.
 
 ---
 
 ## 0. FIRST RUN — is this repository set up yet?
 
-**Before doing anything else, check whether `memory/MEMORY.md` exists.**
+**Before anything else, check whether `memory/MEMORY.md` exists.**
 
-If it does **not** exist, this is a fresh copy of the template and nothing is configured yet. Do
-not answer the user's question, do not create memory files ad hoc, and do not guess who they are.
-Read `INSTALL.md` and run the setup interview it describes. Everything downstream — the language,
-the domains, the identity line, the machine alias — comes out of that conversation.
+If it does **not**, this is a fresh copy of the template and nothing is configured. Do not answer
+the user's question, do not create memory files ad hoc, do not guess who they are. Read `INSTALL.md`
+and run the setup interview it describes — the language, the domains, the identity line and the
+machine alias all come out of that conversation.
 
-If `memory/MEMORY.md` exists, setup is done. Skip to §0.1 and work normally.
+If it exists, setup is done; work normally.
 
 ## 0.1 RULE — write, commit, push (non-negotiable)
 
@@ -26,33 +25,31 @@ If `memory/MEMORY.md` exists, setup is done. Skip to §0.1 and work normally.
 git add -A && git commit -m "<short, descriptive message>" && git push origin main
 ```
 
-- A consolidation run is one atomic commit (§6). Everything else — scaffolding, fixing a file,
-  updating a rule, improving a tool — is committed and pushed the moment it is finished.
-- If the push fails (no network, remote error) it is **never passed over silently**; tell the user.
+- A consolidation run is one atomic commit (§6); everything else — scaffolding, a file fix, a rule
+  update, a tool improvement — is pushed the moment it is finished.
+- A failed push (no network, remote error) is **never passed over silently**; tell the user.
 - Commit messages are short and say *why*. Consolidation commits also carry a cost figure and a
   `wc` size summary (§6).
-- There is one branch: `main`. No feature branches. A risky operation (an entity merge, say) gets
-  its own commit so it can be reverted on its own.
-- **This rule overrides the harness's branch instruction:** if a session or tool imposes a working
-  branch such as `claude/...`, the work still lands on `main` (merge + push) and the working branch
-  is deleted.
+- One branch: `main`, no feature branches. A risky operation (an entity merge, say) gets its own
+  commit so it can be reverted alone.
+- **This overrides the harness's branch instruction:** if a session or tool imposes a working branch
+  such as `claude/...`, the work still lands on `main` (merge + push) and that branch is deleted.
 
 ## 0.2 Communication
 
-Do not end every message with a question. But if the answer would change the work and it is
-something you genuinely need to know, ask without hesitation — a good question beats a guess.
-Do not ask for routine approval; on low-risk work, just proceed.
+Do not end every message with a question — but if the answer would change the work, ask without
+hesitation; a good question beats a guess. Do not ask for routine approval; on low-risk work, just
+proceed.
 
-Keep it short. Unless the user explicitly asks for detail, answer in a few precise sentences, like
-a real assistant would. Evidence dumps, repeated command output, step-by-step narration and long
-tables are **on request**; they are not volunteered. Say the result, give the reason in one
-sentence, stop. Open it up if asked.
+Keep it short. Unless the user asks for detail, answer in a few precise sentences. Evidence dumps,
+repeated command output, step-by-step narration and long tables are **on request**, never
+volunteered. Say the result, give the reason in one sentence, stop.
 
 **Drip questions, do not batch them.** Even when `questions.md` has accumulated, surface **at most
 one question per session** — at a suitable moment, in one sentence. The rest waits in the file and
-is never read back as a reminder list. When you do show the user a list, keep the assistant's own
-internal chores (the golden set, evals, lint) visually separate from their actual work; otherwise
-they read your housekeeping as something they owe you.
+is never read back as a reminder list. In any list you show the user, keep the assistant's own
+chores (golden set, evals, lint) visually separate from their work, or they read your housekeeping
+as something they owe you.
 
 ## 0.3 Session start (multi-machine sync)
 
@@ -62,59 +59,51 @@ they read your housekeeping as something they owe you.
 git pull --rebase --autostash origin main && sh memory/tools/sleep-check.sh
 ```
 
-Pull, because the user may have pushed from another machine; the local copy stays current. If the
-script prints `SLEEP DUE`, run a consolidation (§6) before starting the actual work.
+Pull, because the user may have pushed from another machine. If the script prints `SLEEP DUE`,
+consolidate (§6) before starting the actual work.
 
-**Use `--rebase`, never `--ff-only`.** When a push from one machine fails it leaves an orphan
-commit behind and the branch diverges. `--ff-only` then aborts with "Not possible to fast-forward"
-and **gives up**, so the session carries on reading stale files — which is worse than stopping,
-because nothing looks wrong. Our commits are append-only markdown on a single branch, so rebasing
-is safe. If a push fails, rebase and retry once rather than leaving the commit behind.
+**Use `--rebase`, never `--ff-only`.** A failed push leaves an orphan commit and the branch
+diverges; `--ff-only` then **gives up** and the session reads stale files — worse than stopping,
+because nothing looks wrong. Our commits are append-only markdown on one branch, so rebasing is
+safe. If a push fails, rebase and retry once.
 
-**Staleness is never passed over in silence.** If the pull cannot be made to work at all (no
-network, a real conflict), the copy is **stale**: treat everything you read from memory as suspect,
-resolve the divergence before writing anything, and tell the user in one sentence.
+**Staleness is never passed over in silence.** If the pull cannot be made to work at all, the copy
+is **stale**: treat everything you read as suspect, resolve the divergence before writing anything,
+and tell the user in one sentence.
 
 ## 0.4 Negative feedback is a learning loop
 
-When the user says some version of **"why didn't you do that / you forgot this / same mistake
-again / why is this still like that"**, that is negative feedback. Two things follow, and they are
-**separate**:
+When the user says some version of **"why didn't you do that / you forgot this / same mistake again
+/ why is this still like that"**, that is negative feedback. Two separate things follow:
 
-1. **Fix the immediate work.** Whatever they asked for, do it (see the consistency rule below —
-   reporting the problem and leaving it is not enough). This always happens.
-2. **Drop a `(feedback)`-tagged block into the inbox — without classifying it.** Record their
-   sentence verbatim, one sentence on what actually happened, and leave the question open: *does
-   this call for a structural update?*
+1. **Fix the immediate work.** Whatever they asked for, do it (§0.5: reporting the problem and
+   leaving it is not enough). This always happens.
+2. **Drop a `(feedback)`-tagged block into the inbox — without classifying it.** Their sentence
+   verbatim, one sentence on what actually happened, and the open question: *does this call for a
+   structural update?*
 
 **The agent captures; consolidation decides.** Do not reach for a rule in the moment, do not open a
 rule file, do not invent a check. **"No change was needed" is a legitimate and common outcome** —
-most mistakes are one-offs, and writing a rule for each one degrades the system (see the
-no-overengineering rule in §12). The triage thresholds live in `memory/rules/consolidation.md`.
+most mistakes are one-offs, and a rule for each one degrades the system (§12, no-overengineering).
+Triage thresholds live in `memory/rules/consolidation.md`.
 
-**No defensiveness.** Accept and fix first; give the reason afterwards, in one sentence. No long
-justifications, no listing of past errors.
+**No defensiveness.** Accept and fix first; the reason comes afterwards, in one sentence.
 
-## 0.4 Consistency is a standing duty
+## 0.5 Consistency is a standing duty
 
 When a decision is made, **every trace of it is aligned in the same piece of work.** Reporting that
-"the old version is still over there" is not enough: noticing an inconsistency and fixing it are the
-same task.
+"the old version is still over there" is not enough: noticing an inconsistency and fixing it are one
+task.
 
 Direction: the **source** is the user's statement or decision; a **derivative** is everything that
-follows from it — a README, a tracking table, an index, a script, a rule file, a slide. The
-derivative is brought in line with the source, never the other way round.
+follows from it — a README, a tracking table, an index, a script, a rule file, a slide. Derivatives
+are brought in line with the source, never the other way round.
 
-Limits:
-
-- What propagates automatically is the *decision*. Rewriting content the user wrote in your own
-  voice is not covered by this rule (§12 scope guard still applies).
-- The memory constitution is not overridden (invariant #10): during a conversation you do not fix
-  `domains/`, `people/`, the root or `state.md`. The inconsistency goes to the inbox and is aligned
-  at consolidation.
-- Irreversible or outward-facing alignment (rewriting history, bulk deletion, publishing) is still
-  asked about first.
-- Report what you aligned in **one line**. Never silently.
+Limits: what propagates is the *decision*, not your own rewrite of what the user wrote (§12 scope
+guard). The constitution is not overridden (invariant #10) — during a conversation you never fix
+`domains/`, `people/`, the root or `state.md`; the inconsistency goes to the inbox and is aligned at
+consolidation. Irreversible or outward-facing alignment (rewriting history, bulk deletion,
+publishing) is still asked first. Report what you aligned in **one line**; never silently.
 
 ---
 
@@ -129,27 +118,27 @@ where cost is measured in **tool-call turns** (~2–2.5k effective tokens per tu
 
 ```
 memory/
-├── MEMORY.md            # root entry — loaded every session (static, NO facts)
-├── state.md             # volatile "right now" context (≤200 tokens)
-├── questions.md         # consolidation's questions for the human (cap: 5 items)
-├── todo.md              # task list — deliberately minimal; items carry [[id]] links, no due dates (cap: 20 open)
+├── MEMORY.md     # root entry — loaded every session (static, NO facts)
+├── state.md      # volatile "right now" context (≤200 tokens)
+├── questions.md  # questions for the human (cap: 5)
+├── todo.md       # task list — minimal; [[id]] links, no due dates (cap: 20 open)
 ├── rules/
-│   ├── format.md        # THE SINGLE SCHEMA AUTHORITY (schemas, enums, budgets, grammar + lint-config)
+│   ├── format.md        # THE SINGLE SCHEMA AUTHORITY (schema, enums, budgets, grammar, lint-config)
 │   └── consolidation.md # the consolidation task definition
-├── inbox/               # append-only logs — THE ONLY WRITE GATE
-├── domains/<d>/         # your domains, each with an _index.md
-├── people/              # person/organisation entity files + _index.md (alias table)
-├── archive/             # L2 raw layer: archive/inbox/ + archive/<domain>/YYYY/
-├── secret/              # never enters consolidation or embeddings; humans only
-└── tools/               # lint.py, eval.py, sleep-check.sh, sleep-run.sh, golden-set.md
+├── inbox/        # append-only logs — THE ONLY WRITE GATE
+├── domains/<d>/  # your domains, each with an _index.md
+├── people/       # person/organisation files + _index.md (alias table)
+├── archive/      # L2 raw layer: archive/inbox/ + archive/<domain>/YYYY/
+├── secret/       # never consolidated or embedded; humans only
+└── tools/        # lint.py, eval.py, sleep-check.sh, sleep-run.sh, golden-set.md
 ```
 
 ## 3. Constitution — 10 invariants (docs/DESIGN.md §9)
 
 1. L2 is append-only and immutable; L1 can always be re-derived from it.
 2. Every consolidation is one atomic commit; risky operations get their own commit.
-3. The single source of truth for "processed" is file location (`inbox/` → `archive/inbox/`); there is no separate state file.
-4. Lint is mechanical, is the only gate, and is identical for humans and models; `rules/format.md` is the single schema authority.
+3. The only source of truth for "processed" is file location (`inbox/` → `archive/inbox/`); no state file.
+4. Lint is mechanical, is the only gate, and is the same for humans and models; `rules/format.md` is the single schema authority.
 5. There is no deletion; forgetting = moving to `## History` / `archive/` + dropping from the index.
 6. The root file holds no facts; volatile context lives in `state.md`.
 7. Single-home: a fact has exactly one home, everything else links to it. Ambiguous bare names are a lint error.
@@ -162,19 +151,18 @@ memory/
 1. If this is a memory task, read `memory/state.md` first (the root is already loaded).
 2. Pick a domain from the root table → read that domain's `_index.md` (≤500 tokens) → if the answer
    is in `## Hot` or on an index line, **stop**.
-3. Read at most 2 files, using the **full path from the index** (never burn a Glob turn resolving a `[[wiki-link]]`).
+3. Read at most 2 files, via the **full path from the index** (never burn a Glob turn on a `[[wiki-link]]`).
 4. Miss → domain-scoped `rg -m 20 "<term>"`, trying synonyms and other languages your memory uses.
    A repo-wide search happens only with explicit cross-domain intent.
-5. Still a miss → say **"that isn't in my memory"**. Never invent one; abstention beats hallucination.
-   Offer the nearest partial match.
+5. Still a miss → say **"that isn't in my memory"**; abstention beats hallucination. Offer the
+   nearest partial match.
 
 ## 5. Write protocol (summary — full version in docs/DESIGN.md §5)
 
 - Something worth remembering came up → append it as a `## HH:MM` block to
-  `memory/inbox/<YYYY-MM-DD>--<machine>.md`, and **only** there. If the file is being
-  created for the day, open it **with frontmatter** (`type: log`, `date`, `machine`) — lint
-  fails without it. No classification field; sorting
-  is consolidation's job. Read the machine alias from `memory/.machine`.
+  `memory/inbox/<YYYY-MM-DD>--<machine>.md`, and **only** there. The day's first write opens the
+  file **with frontmatter** (`type: log`, `date`, `machine`) — lint fails without it. No
+  classification field; sorting is consolidation's job. The machine alias is in `memory/.machine`.
 - Long raw content (a transcript, a document) goes straight into `memory/archive/<domain>/YYYY/`;
   the inbox gets a one- or two-sentence summary plus the path.
 - **Never** write to `domains/`, `people/`, `MEMORY.md` or `state.md` during interaction (invariant #10).
@@ -186,38 +174,35 @@ memory/
 ## 6. Consolidation (opportunistic trigger; task definition in `rules/consolidation.md`)
 
 **Trigger — three ways:** (a) the user asks for it; (b) the opportunistic rule — at session start,
-if `inbox/` is non-empty and the last consolidation (newest file in `archive/inbox/`) was more than
-24 hours ago, a consolidation happens before the real work; (c) a nightly scheduled run —
-`sh memory/tools/sleep-run.sh` from cron, launchd or Task Scheduler, **on one machine only**. Every
-other machine keeps (a) and (b); duplicating the schedule turns the collision below into a nightly
-event.
+if `inbox/` is non-empty and the last consolidation (newest file in `archive/inbox/`) was over 24
+hours ago, consolidate before the real work; (c) a nightly scheduled run —
+`sh memory/tools/sleep-run.sh` from cron, launchd or Task Scheduler, **on one machine only**. Other
+machines keep (a) and (b); duplicating the schedule makes the collision below a nightly event.
 
-Portability is the reason this was once a no-cron design, and it survives: the scheduler calls a
-plain `sh` script, the script does no distilling (the rules stay in this file), and the harness
-command is swappable through `memory/.sleep-command`. The schedule does not replace the rule; it
-stops consolidation from depending on someone opening a session.
+Portability was the reason this was once a no-cron design, and it survives: the scheduler only
+calls a plain `sh` script, that script does no distilling (the rules stay here), and the harness
+command is swappable through `memory/.sleep-command`.
 
-**Lock — multi-machine:** if two machines consolidate at once, the same logs are distilled twice
-and the archive moves collide. The lock is shared through git — `memory/.sleep-lock` is committed
-and pushed when a run starts and deleted when it ends; a lock older than 2 hours is treated as a
-crashed run and taken over. The check lives in `sleep-check.sh`, not in prose: while a fresh lock
-exists, **no path** — manual, opportunistic or scheduled — starts a second consolidation.
+**Lock — multi-machine:** two machines consolidating at once distil the same logs twice and collide
+on the archive moves. The lock is shared through git: `memory/.sleep-lock` is committed and pushed
+when a run starts and deleted when it ends, and a lock older than 2 hours counts as a crashed run
+and is taken over. The check lives in `sleep-check.sh`, not in prose — while a fresh lock exists
+**no path** (manual, opportunistic or scheduled) starts a second run.
 
 Flow: pre-flight (clean tree → `pre-sleep` checkpoint commit) → LLM pass (triage → sort → merge →
-compress → resolve conflicts → refresh indexes and `state.md`) → `python3 memory/tools/lint.py`
+compress → resolve conflicts → refresh indexes and `state.md`) → `python3 memory/tools/lint.py`,
 **no commit without green** → processed logs move to `archive/inbox/` → one atomic commit → human
 diff review. If it breaks: `git reset --hard pre-sleep`.
 
-Approval gates (proposals land in `questions.md`, they are not applied automatically): merging
-entities, adding an alias, any change that drops content without a source, opening or closing a
-domain (threshold: ≥5 records on the same theme; at most one proposal per month).
+Approval gates (proposals land in `questions.md`, never applied automatically): merging entities,
+adding an alias, any change that drops content without a source, opening or closing a domain
+(threshold: ≥5 records on one theme; at most one proposal per month).
 
 ## 7. Capabilities and rule routing
 
 **Tool detail is not here: `memory/tools/_index.md`** — what each tool does and, more importantly,
-its **trigger** (when to run it). Ask that file "what do I have?"; do not add tool lines to this
-section (invariant #7, one home per fact). Lint enforces it: a tool missing from the index is an
-error.
+its **trigger** (when to run it). Ask that file "what do I have?"; do not add tool lines here
+(invariant #7). Lint enforces it: a tool missing from the index is an error.
 
 **Rule routing table.** When the trigger on the left appears, the file on the right is read
 **before starting the actual work**. This is a gate, not a suggestion:
@@ -227,12 +212,12 @@ error.
 | consolidation / sleep run | memory/rules/consolidation.md |
 | schema · enum · budget · fact grammar question | memory/rules/format.md |
 
-Keep this table complete as you add rule files. Routing keeps the always-loaded router small, but
-it introduces one real risk: **a trigger that never fires makes the capability die silently** — no
-error is raised, the work is simply done incompletely. Three mechanical checks stand against that:
-lint's *orphan rule* check (every file under `rules/` must be named in this table), lint's
-*orphan tool* check (every script must appear in the tool index), and the index's trigger column,
-which cannot be left blank. Losing a capability quietly is a **bug** here, not a silent gap.
+Keep this table complete as you add rule files. Routing keeps the router small at one real risk:
+**a trigger that never fires makes the capability die silently** — no error is raised, the work is
+just done incompletely. Three lint checks stand against that: *orphan rule* (every file under
+`rules/` appears in this table), *orphan tool* (every script appears in the tool index) and *shell
+syntax* (a hook that cannot be parsed does nothing and says nothing). Losing a capability quietly is
+a **bug** here, not a silent gap.
 
 ## 8. Naming and formatting (short)
 
@@ -241,66 +226,63 @@ which cannot be left blank. Losing a capability quietly is a **bug** here, not a
 - Time-bound files are `YYYY-MM-DD-slug.md`. Frontmatter keys and controlled values are fixed
   English; body text is in the user's language.
 - Fact grammar: `- [YYYY-MM-DD]` point, `- [YYYY-MM-DD→]` ongoing, `- [t1→t2]` only inside
-  `## History`, `- [void: YYYY-MM-DD]` for something that was wrong from the start. An update is
-  not a correction.
-- Index lines carry **full paths**; `[[...]]` is only for human-readable cross-references in file bodies.
+  `## History`, `- [void: YYYY-MM-DD]` for something wrong from the start. An update ≠ a correction.
+- Index lines carry **full paths**; `[[...]]` is only for cross-references in file bodies.
 
 ## 9. Security
 
 - `secret/` never enters consolidation, is never embedded, and only a human touches it. It is
   **gitignored by default** — see `memory/secret/README.md` before you change that.
 - **Remote hygiene.** This repository holds someone's private life. Before every push, check that
-  `origin` is the user's own private repository. If `origin` still points at the upstream template,
-  or at any repository the user did not set up in `INSTALL.md`, **stop and ask** — never push
-  personal memory to a repository the user does not own.
-- If the repository is public, personal memory does not go in it. Say so plainly and stop.
-- Deleting a secret means deleting it **from the whole git history** — removing a line from a file
-  is not enough. The procedure is in `memory/secret/README.md`. A human triggers it; an agent never
-  runs it alone (it rewrites history and force-pushes).
-- Third-party data (other people's records, students' grades and the like) does not enter the
-  corpus; where it must, it is de-identified.
+  `origin` is the user's own private repository; if it still points at the upstream template, or at
+  anything they did not set up in `INSTALL.md`, **stop and ask**. If the repository is public,
+  personal memory does not go in it — say so plainly and stop.
+- Deleting a secret means deleting it **from the whole git history**; removing a line is not enough.
+  The procedure is in `memory/secret/README.md`. A human triggers it, an agent never runs it alone
+  (it rewrites history and force-pushes).
+- Third-party data (other people's records, students' grades) does not enter the corpus; where it
+  must, it is de-identified.
 
 ## 10. External sources — read taps
 
-- Definitions and keys live in `memory/secret/sources.md` (gitignored). Special rule: only the
-  source-pull step reads that file; consolidation and embedding never do. A key only ever travels
-  to its own service's API.
-- Flow: at step 0 of a consolidation, whatever changed since the last fetch is pulled and appended
-  to the inbox as a summary with a provenance trace (for example "(from calendar)"). No raw dumps.
-  **Writing to an external system is never automatic.**
+- Definitions and keys live in `memory/secret/sources.md` (gitignored). Only the source-pull step
+  reads that file; consolidation and embedding never do, and a key only ever travels to its own
+  service's API.
+- Flow: at step 0 of a consolidation, whatever changed since the last fetch is appended to the inbox
+  as a summary with a provenance trace (for example "(from calendar)"). No raw dumps. **Writing to
+  an external system is never automatic.**
 - An optional, self-contained Google (Calendar + Tasks + Gmail) tap ships in
-  `memory/tools/integrations/google/`; see its README. It is off unless configured, and it has no
-  send capability by construction.
+  `memory/tools/integrations/google/`; see its README. It is off unless configured and has no send
+  capability by construction.
 
 ## 11. Capability pool — working in other repositories
 
 - When asked to "do X in repository Y": clone it under `temp/<repo>`, work there, and push the
   change to **that repository's own remote**.
 - `temp/` is gitignored, can be deleted at any moment, and is never committed here.
-- Before starting, read the target repository's own rules (AGENTS.md / CLAUDE.md / README) and follow them.
+- Before starting, read the target repository's own rules (AGENTS.md / CLAUDE.md / README) and
+  follow them.
 
 ## 12. Working practices for larger tasks
 
 For big coding or research tasks, to keep agent autonomy safe and to avoid *overengineering*:
 
-- **Acceptance criteria and scope guard.** When planning a task, write down the file scope you will
-  touch and what "done" means. Do not wander outside it. Fix the stated thing; do not invent a new
-  architecture along the way.
+- **Acceptance criteria and scope guard.** When planning, write down the file scope you will touch
+  and what "done" means, then stay inside it. Fix the stated thing; do not invent a new architecture
+  along the way.
 - **Pragmatism.** Be plain, finish the job. A reviewer pass may improve presentation, safety and
-  quality, but it never redesigns the core methodology or the main architecture from scratch.
-- **Memory records *why*.** In logs and commit messages, write down why a decision was made rather
-  than what was done. The code or text already holds the "what"; memory should hold the reasoning.
+  quality, but never redesigns the core methodology or architecture from scratch.
+- **Memory records *why*.** In logs and commit messages, write why a decision was made rather than
+  what was done. The code already holds the "what"; memory should hold the reasoning.
 - **Loop breaker.** If you hit the same error or blocker twice in a row, stop struggling: break the
   loop and hand it to the user (`questions.md` or a message).
+- **Adversarial review.** For genuinely risky changes, brief a sub-agent whose only job is to find
+  weak points, security holes and logic errors; touch the main files only after that pass.
 - **The evolution contract.** Neither over-constrained nor unconstrained: the repository should
   evolve on its own without losing its character, breaking, or over-engineering. It must never lose
-  memory, never lose capabilities, and stay open to gaining new ones. In practice that splits
-  cleanly: the **never-lose** half is mechanical and has no tolerance (lint + `sleep-audit.py` +
-  an append-only L2); the **evolution** half stays free — no permission round is needed to add a
-  tool, a rule file, or a domain, only a trace. When a check blocks legitimate work, **calibrate
-  the check, do not curtail the work** (`sleep-audit.py` originally turned red over a 3-character
-  growth; a tolerance was added). And no capability may die quietly: when a rule moves behind a
-  trigger, the check that catches a *missed* trigger is built in the same change.
-
-- **Adversarial review.** For genuinely risky changes, brief a sub-agent whose only job is to find
-  weak points, security holes and logic errors, and touch the main files only after that pass.
+  memory or capabilities, and must stay open to gaining new ones. That splits cleanly — the
+  **never-lose** half is mechanical, with no tolerance (lint + `sleep-audit.py` + append-only L2);
+  the **evolution** half stays free, since adding a tool, a rule file or a domain needs no
+  permission round, only a trace. When a check blocks legitimate work, **calibrate the check, do not
+  curtail the work**. And no capability may die quietly: when a rule moves behind a trigger, the
+  check that catches a *missed* trigger is built in the same change.
