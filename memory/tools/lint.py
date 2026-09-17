@@ -15,6 +15,8 @@ Exit code: 0 = green, 1 = red (a consolidation may only commit on green).
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -335,6 +337,27 @@ def main() -> int:
                 continue
             if f"memory/tools/{t.name}" not in idx:
                 err(f"memory/tools/_index.md: {t.name} is missing — the capability dies silently")
+
+    # --- Hook syntax check [2026-09-17] ---
+    # Third member of the "dies silently" family and the sneakiest: a shell script that fails to
+    # PARSE does nothing and says nothing. A session-start hook broke this way for five days --
+    # a single apostrophe inside "${var:+...}" left the string open under bash 3.2 (which is
+    # /bin/sh on macOS), so the hook died with "unexpected EOF" on every session while zsh and
+    # dash read the same file happily. Machine-dependent and invisible; hence both shells are
+    # tried here (skipped silently when neither exists, e.g. on Windows).
+    shells = [k for k in ("sh", "bash") if shutil.which(k)]
+    for t in sorted((MEMORY / "tools").rglob("*.sh")):
+        for k in shells:
+            try:
+                r = subprocess.run([k, "-n", str(t)], capture_output=True, text=True,
+                                   encoding="utf-8", errors="replace", timeout=15)
+            except (OSError, subprocess.TimeoutExpired):
+                continue
+            if r.returncode != 0:
+                first = (r.stderr or "").strip().splitlines()[:1]
+                err(f"{rel(t)}: does not parse under {k} — "
+                    f"{first[0] if first else 'syntax error'} (the hook dies silently)")
+                break
 
     report()
     return 1 if errors else 0
