@@ -132,6 +132,80 @@ def task(a, tok):
     print("created, id:", r.get("id"))
 
 
+def task_update(a, tok):
+    """Update an existing Google Tasks item (title / notes / due date / completed).
+
+    WHY: the tool could only OPEN tasks. When a decision changes, the trace it left in Tasks
+    goes stale and cannot be corrected — a decision has to be aligned everywhere it left a mark,
+    and the task list is one of those marks.
+
+    Found by --find rather than by id: carrying ids around by hand produces human error. If the
+    search matches anything other than exactly one task the tool REFUSES to run — stopping beats
+    editing the wrong task.
+    """
+    try:
+        r = api(TASKS, tok, params={"showCompleted": "false", "maxResults": "100"})
+    except urllib.error.HTTPError as e:
+        sys.exit(f"ERROR ({e.code}): {error_message(e) or 'could not read tasks'}")
+    needle = a.find.casefold()
+    found = [t for t in (r.get("items") or []) if needle in (t.get("title") or "").casefold()]
+    if not found:
+        sys.exit(f"no match: {a.find!r}")
+    if len(found) > 1:
+        print("more than one match — narrow --find:", file=sys.stderr)
+        for t in found:
+            print(f"  · {t.get('title')}", file=sys.stderr)
+        sys.exit(2)
+    t = found[0]
+    patch = {}
+    if a.title:
+        patch["title"] = a.title
+    if a.description is not None:
+        patch["notes"] = a.description
+    if a.due:
+        patch["due"] = f"{a.due}T00:00:00.000Z"
+    if a.complete:
+        patch["status"] = "completed"
+    if not patch:
+        sys.exit("nothing to change (--title/--description/--due/--complete)")
+    print(f"TASK: \"{t.get('title')}\"  (due {(t.get('due') or '')[:10] or '—'})")
+    for k, v in patch.items():
+        print(f"  {k}: {v}")
+    if not a.confirm:
+        return print("dry run — add --confirm to apply")
+    try:
+        api(f"{TASKS}/{t['id']}", tok, method="PATCH", body=patch)
+    except urllib.error.HTTPError as e:
+        sys.exit(f"ERROR ({e.code}): {error_message(e) or 'could not update the task'}")
+    print("updated, id:", t["id"])
+
+
+def task_delete(a, tok):
+    """Delete the single task matched by --find. Meant for cleaning up test records.
+
+    A write tool that cannot clean up after itself cannot be tested, and an untested write tool
+    has no business touching a real account. Whether the assistant should close your real tasks
+    is a policy question, not a tool question — decide it in your own rules file.
+    """
+    try:
+        r = api(TASKS, tok, params={"showCompleted": "true", "maxResults": "100"})
+    except urllib.error.HTTPError as e:
+        sys.exit(f"ERROR ({e.code}): {error_message(e) or 'could not read tasks'}")
+    needle = a.find.casefold()
+    found = [t for t in (r.get("items") or []) if needle in (t.get("title") or "").casefold()]
+    if len(found) != 1:
+        sys.exit(f"expected exactly one match, found {len(found)}: {a.find!r}")
+    t = found[0]
+    print(f"WILL DELETE: \"{t.get('title')}\"")
+    if not a.confirm:
+        return print("dry run — add --confirm to apply")
+    try:
+        api(f"{TASKS}/{t['id']}", tok, method="DELETE")
+    except urllib.error.HTTPError as e:
+        sys.exit(f"ERROR ({e.code}): {error_message(e) or 'could not delete the task'}")
+    print("deleted, id:", t["id"])
+
+
 def draft(a, tok):
     m = EmailMessage()
     m["To"] = a.to
@@ -187,6 +261,19 @@ def main():
     t.add_argument("--description")
     t.add_argument("--confirm", action="store_true")
 
+    tu = sub.add_parser("task-update")
+    tu.add_argument("--find", required=True,
+                    help="part of the title; the tool refuses to run unless exactly one matches")
+    tu.add_argument("--title")
+    tu.add_argument("--description")
+    tu.add_argument("--due")
+    tu.add_argument("--complete", action="store_true")
+    tu.add_argument("--confirm", action="store_true")
+
+    td = sub.add_parser("task-delete")
+    td.add_argument("--find", required=True)
+    td.add_argument("--confirm", action="store_true")
+
     d = sub.add_parser("draft")
     d.add_argument("--to", required=True)
     d.add_argument("--subject", required=True)
@@ -197,7 +284,8 @@ def main():
 
     a = ap.parse_args()
     tok = access_token()
-    {"event": event, "task": task, "draft": draft}[a.command](a, tok)
+    {"event": event, "task": task, "task-update": task_update,
+     "task-delete": task_delete, "draft": draft}[a.command](a, tok)
 
 
 if __name__ == "__main__":

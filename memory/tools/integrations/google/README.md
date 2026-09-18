@@ -13,7 +13,7 @@ assistant — an MCP server binds you to one harness.
 |---|---|---|
 | `auth.py` | — | One-time OAuth. A human approves it in a browser. |
 | `fetch.py` | read | Upcoming events, open tasks, unread mail → an inbox summary. Runs at step 0 of a consolidation. |
-| `write.py` | write | Calendar event, Google Task, or a Gmail **draft**. Nothing happens without `--confirm`. |
+| `write.py` | write | Calendar event, Google Task (create / `task-update` / `task-delete`), or a Gmail **draft**. Nothing happens without `--confirm`. |
 | `drive.py` | read | Search, list and download files from Drive. Read-only scope, no write call. |
 
 `fetch.py` writes summaries, never raw dumps: an event line for the calendar, due date plus title
@@ -82,6 +82,11 @@ python3 memory/tools/integrations/google/write.py event \
 # and for real
 python3 memory/tools/integrations/google/write.py event \
   --title "Dentist" --start 2026-09-20T10:00 --confirm
+
+# a decision changed? realign the trace it left in Tasks instead of leaving a stale one.
+# --find must match exactly one task, otherwise the tool refuses to run.
+python3 memory/tools/integrations/google/write.py task-update \
+  --find "pick a journal" --title "Upload the preprint" --due 2026-10-05 --confirm
 ```
 
 ```bash
