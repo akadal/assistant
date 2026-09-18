@@ -174,8 +174,8 @@ memory/
 ## 6. Consolidation (opportunistic trigger; task definition in `rules/consolidation.md`)
 
 **Trigger — three ways:** (a) the user asks for it; (b) the opportunistic rule — at session start,
-if `inbox/` is non-empty and the last consolidation (newest file in `archive/inbox/`) was over 24
-hours ago, consolidate before the real work; (c) a nightly scheduled run —
+if `inbox/` is non-empty and nothing has been consolidated today (the newest file in
+`archive/inbox/` is older than today), consolidate before the real work; (c) a nightly scheduled run —
 `sh memory/tools/sleep-run.sh` from cron, launchd or Task Scheduler, **on one machine only**. Other
 machines keep (a) and (b); duplicating the schedule makes the collision below a nightly event.
 
