@@ -77,6 +77,10 @@ def budgets() -> dict:
 def kind(path: str) -> str | None:
     if not L1_RE.match(path):
         return None
+    if path == "memory/people/_index.md":
+        # Same budget as lint uses [2026-09-18]. If the two gates read different budgets the
+        # calibration is only half done -- the "ported but the caller stayed behind" failure.
+        return "people_index"
     if path.startswith("memory/people/"):
         return "index" if path.endswith("_index.md") else "entity"
     return "index" if path.endswith("_index.md") else "topic"

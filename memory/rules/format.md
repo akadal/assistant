@@ -170,6 +170,7 @@ Conversion: ~4 characters ≈ 1 token (English). Target / ceiling, in characters
 | `MEMORY.md` | 2,000 | 3,200 |
 | `state.md` | — | 800 |
 | index | 1,600 | 2,000 |
+| `people/_index.md` | 2,300 | 2,900 |
 | topic | 1,600 | 2,800 |
 | entity | 1,000 | 1,600 |
 | log / archive | free | free |
@@ -207,6 +208,7 @@ lint-config:
     state:  [null, 800]
     todo_open_item_cap: 20
     index:  [1600, 2000]
+    people_index: [2300, 2900] # people/_index.md — the alias table grows with people, not files
     topic:  [1600, 2800]
     entity: [1000, 1600]
   questions_grammar: "^- \[\d{4}-\d{2}-\d{2}\] (approval|conflict|fact)( · due \d{4}-\d{2}-\d{2})?( · asked \d+)? — "

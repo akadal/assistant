@@ -298,10 +298,19 @@ def main() -> int:
                     aliases_seen[a] = r
 
         # --- Rule 3: character budgets ---
+        # The alias table has its own budget. A domain index grows with the number of FILES and
+        # that number is bounded by distilling; the alias table grows with the number of PEOPLE
+        # and that cannot be compressed — each line says which record a name resolves to, and the
+        # only way to shorten a line is to drop an alias, which brings back the bare-name ambiguity
+        # invariant #7 forbids. Measured 2026-09-18 on the repository this project derives from:
+        # the shared index ceiling filled up at 23 people and blocked legitimate new records.
+        # A check that blocks legitimate work gets calibrated; the work does not get cut (§12).
         bkey = {"root": "root", "state": "state", "index": "index",
                 "topic": "topic", "entity": "entity",
                 "router": "router", "rule": "rule",
                 "tool_index": "tool_index"}.get(kind)
+        if r == "memory/people/_index.md" and budgets.get("people_index"):
+            bkey = "people_index"
         if bkey and bkey in budgets and budgets[bkey]:
             target_n, ceiling = budgets[bkey]
             n = len(text)
