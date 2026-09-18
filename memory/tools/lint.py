@@ -14,10 +14,12 @@ Exit code: 0 = green, 1 = red (a consolidation may only commit on green).
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 MEMORY = Path(__file__).resolve().parent.parent  # memory/
@@ -354,7 +356,32 @@ def main() -> int:
     # /bin/sh on macOS), so the hook died with "unexpected EOF" on every session while zsh and
     # dash read the same file happily. Machine-dependent and invisible; hence both shells are
     # tried here (skipped silently when neither exists, e.g. on Windows).
-    shells = [k for k in ("sh", "bash") if shutil.which(k)]
+    # Each shell is PROBED first [2026-09-18]: on one Windows machine `bash` on PATH is the
+    # WSL shim, and with WSL itself broken it returned non-zero for every file -- the check
+    # then flagged five healthy scripts and held the lint red, which would have blocked the
+    # nightly consolidation commit. A shell that cannot parse a known-good probe file can say
+    # nothing about the scripts, so it is dropped silently. If no working shell remains the
+    # check is skipped rather than failing.
+    with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False, encoding="utf-8") as _fh:
+        _fh.write('t=1\nif [ "$t" = 1 ]; then :; fi\n')
+        _probe = _fh.name
+    shells = []
+    try:
+        for _k in ("sh", "bash"):
+            if not shutil.which(_k):
+                continue
+            try:
+                _p = subprocess.run([_k, "-n", _probe], capture_output=True, text=True,
+                                    encoding="utf-8", errors="replace", timeout=15)
+            except (OSError, subprocess.TimeoutExpired):
+                continue
+            if _p.returncode == 0:
+                shells.append(_k)
+    finally:
+        try:
+            os.unlink(_probe)
+        except OSError:
+            pass
     for t in sorted((MEMORY / "tools").rglob("*.sh")):
         for k in shells:
             try:
