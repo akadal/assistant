@@ -9,12 +9,25 @@
 # Because "processed" is defined by file location (invariant #3), the state is read entirely
 # from file names; mtime is never used (cloning or checking out destroys mtime).
 #
+# --nightly: the scheduled run. The once-a-day test does NOT apply to it: a consolidation that
+# already happened during the day does not cancel the night, because the logs written after it
+# would otherwise sit unprocessed until the following day. Only two things stop a nightly run —
+# nothing to distill (an empty inbox) and another machine already consolidating.
+#
 # Exit: 0 = a consolidation is due (the reason goes to stdout), 1 = not due.
 
 cd "$(dirname "$0")/../.." || exit 1
 
+NIGHTLY=""
+for a in "$@"; do
+  case "$a" in
+    --nightly) NIGHTLY=1 ;;
+    *) echo "unknown argument: $a" >&2; exit 2 ;;
+  esac
+done
+
 INBOX=$(ls memory/inbox/*.md 2>/dev/null | wc -l | tr -d ' ')
-[ "$INBOX" -eq 0 ] 2>/dev/null && exit 1
+[ "$INBOX" -eq 0 ] 2>/dev/null && { [ -n "$NIGHTLY" ] && echo "NOT DUE: inbox is empty, nothing to distil"; exit 1; }
 
 # Lock: the repo is multi-machine, so two machines can start consolidating the same inbox — the
 # same logs get distilled twice and the archive moves collide. The lock is shared through git
@@ -28,6 +41,11 @@ if [ -f "$LOCK" ]; then
     echo "NOT DUE: $(sed -n 's/^machine=//p' "$LOCK") is consolidating (lock ${AGE}s old)"
     exit 1
   fi
+fi
+
+if [ -n "$NIGHTLY" ]; then
+  echo "SLEEP DUE: nightly run, inbox has $INBOX log(s)"
+  exit 0
 fi
 
 LAST=$(ls memory/archive/inbox/*.md 2>/dev/null | sed 's|.*/||' \

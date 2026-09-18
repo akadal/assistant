@@ -86,7 +86,7 @@ fi
 
 # --- 2. is it due ---------------------------------------------------------
 if [ -z "$FORCE" ]; then
-  REASON=$(sh memory/tools/sleep-check.sh)
+  REASON=$(sh memory/tools/sleep-check.sh --nightly)
   if [ $? -ne 0 ]; then log "skipped: ${REASON:-not due}"; exit 0; fi
   log "trigger: $REASON"
 else

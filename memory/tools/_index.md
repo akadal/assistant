@@ -15,8 +15,10 @@ path here must exist. A tool without a trigger dies silently — that is why thi
 - `memory/tools/sleep-audit.py` — mechanical quality audit of the consolidation diff: fabrication,
   loss, bloat, ratchet, L2 integrity. **Trigger:** during consolidation, after lint and before the
   commit (the second gate); `--last` to audit a past sleep commit.
-- `memory/tools/sleep-check.sh` — opportunistic sleep trigger; exit 0 means a run is due. Says
-  "NO SLEEP" while a fresh lock exists. **Trigger:** at the start of every session.
+- `memory/tools/sleep-check.sh` — sleep trigger; exit 0 means a run is due. Says "NO SLEEP" while
+  a fresh lock exists. `--nightly`: skips the once-a-day test, so the scheduled run is
+  unconditional (AGENTS.md §6c). **Trigger:** at the start of every session; `--nightly` from
+  `sleep-run.sh`.
 - `memory/tools/sleep-run.sh` — scheduled, unattended sleep runner: pull → due? → lock → harness →
   release. It does no distilling itself. **Trigger:** a scheduler on **one** machine only.
 - `memory/tools/question-pick.py` — picks the question of the day by effective due date;

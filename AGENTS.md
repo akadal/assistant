@@ -178,6 +178,9 @@ if `inbox/` is non-empty and nothing has been consolidated today (the newest fil
 `archive/inbox/` is older than today), consolidate before the real work; (c) a nightly scheduled run —
 `sh memory/tools/sleep-run.sh` from cron, launchd or Task Scheduler, **on one machine only**. Other
 machines keep (a) and (b); duplicating the schedule makes the collision below a nightly event.
+**The nightly run is unconditional:** (b)'s once-a-day test does not apply to it, because logs
+written after a daytime run would otherwise wait another day. Only an empty inbox or a fresh lock
+stops it (`sleep-check.sh --nightly`).
 
 Portability was the reason this was once a no-cron design, and it survives: the scheduler only
 calls a plain `sh` script, that script does no distilling (the rules stay here), and the harness
