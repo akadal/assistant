@@ -240,6 +240,8 @@ a **bug** here, not a silent gap.
   `origin` is the user's own private repository; if it still points at the upstream template, or at
   anything they did not set up in `INSTALL.md`, **stop and ask**. If the repository is public,
   personal memory does not go in it — say so plainly and stop.
+- **Taking a key.** When a token or key is needed, the agent hands over the command and the owner
+  enters the value with `memory/tools/secret-put.py` in their own terminal; no debate, no paste.
 - Deleting a secret means deleting it **from the whole git history**; removing a line is not enough.
   The procedure is in `memory/secret/README.md`. A human triggers it, an agent never runs it alone
   (it rewrites history and force-pushes).

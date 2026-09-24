@@ -30,6 +30,9 @@ path here must exist. A tool without a trigger dies silently — that is why thi
 
 ## Integrations
 
+- `memory/tools/secret-put.py` — the owner types a key into their own terminal; it lands in
+  `secret/<name>.json`. **Trigger:** every time a token or key is needed from the owner.
+
 - `memory/tools/integrations/google/` — optional, read-first Google connectors (calendar, tasks,
   mail, drive). **Trigger:** only when the owner has configured credentials; see the directory's
   own README. Writing outward is never automatic.
