@@ -80,8 +80,10 @@ def mark_asked(item: dict) -> None:
     lines = QUESTIONS.read_text(encoding="utf-8").splitlines()
     ln = lines[item["line_no"]]
     n = item["asked"] + 1
-    if item["asked"]:
-        ln = ln.replace(f" · asked {item['asked']} — ", f" · asked {n} — ", 1)
+    # Look for the field, not its value: on a line written by hand as "asked 0", 0 is falsy, and
+    # the old check appended a second counter ("asked 0 · asked 1"), which breaks the lint.
+    if re.search(r" · asked \d+ — ", ln):
+        ln = re.sub(r" · asked \d+ — ", f" · asked {n} — ", ln, count=1)
     else:
         ln = ln.replace(" — ", f" · asked {n} — ", 1)
     lines[item["line_no"]] = ln
