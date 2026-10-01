@@ -13,7 +13,7 @@ assistant — an MCP server binds you to one harness.
 |---|---|---|
 | `auth.py` | — | One-time OAuth. A human approves it in a browser. |
 | `fetch.py` | read | Upcoming events, open tasks, unread mail → an inbox summary. Runs at step 0 of a consolidation. |
-| `write.py` | write | Calendar event, Google Task (create / `task-update` / `task-delete`), or a Gmail **draft**. Nothing happens without `--confirm`. |
+| `write.py` | write | Calendar event, Google Task (create / `task-update` / `task-delete`), or a Gmail **draft** (`--update <id>` fixes an existing draft in place). Nothing happens without `--confirm`. |
 | `drive.py` | read | Search, list and download files from Drive. Read-only scope, no write call. |
 
 `fetch.py` writes summaries, never raw dumps: an event line for the calendar, due date plus title

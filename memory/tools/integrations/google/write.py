@@ -234,6 +234,12 @@ def draft(a, tok):
     if not a.confirm:
         return print("dry run — add --confirm to apply")
     raw = base64.urlsafe_b64encode(m.as_bytes()).decode()
+    if a.update:
+        # Replaces an existing draft in place (drafts.update): no second draft is left behind, and the
+        # agent never has to delete one (deleting is permanent).
+        r = api(f"https://gmail.googleapis.com/gmail/v1/users/me/drafts/{a.update}", tok,
+                method="PUT", body={"id": a.update, "message": {"raw": raw}})
+        return print("draft updated, id:", r.get("id"), "— sending it is your job (the Gmail interface)")
     r = api("https://gmail.googleapis.com/gmail/v1/users/me/drafts", tok,
             method="POST", body={"message": {"raw": raw}})
     print("draft created, id:", r.get("id"), "— sending it is your job (the Gmail interface)")
@@ -280,6 +286,8 @@ def main():
     d.add_argument("--body", required=True)
     d.add_argument("--attach", action="append", metavar="PATH",
                    help="file to attach; may be given more than once")
+    d.add_argument("--update", metavar="DRAFT_ID",
+                   help="replace this existing draft in place instead of creating a new one")
     d.add_argument("--confirm", action="store_true")
 
     a = ap.parse_args()
