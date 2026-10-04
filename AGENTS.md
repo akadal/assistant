@@ -267,6 +267,10 @@ a **bug** here, not a silent gap.
 - `temp/` is gitignored, can be deleted at any moment, and is never committed here.
 - Before starting, read the target repository's own rules (AGENTS.md / CLAUDE.md / README) and
   follow them.
+- **Throwaway infrastructure is torn down when the job ends — you do not ask.** A scratch
+  repository, a test VM or container, an account opened for a dry run, a one-off script: whoever
+  created it removes it. If you lack the permission to delete it (for example a `gh` token
+  without the `delete_repo` scope), it goes on `todo.md` — it is never just left behind.
 
 ## 12. Working practices for larger tasks
 
