@@ -281,12 +281,12 @@ For big coding or research tasks, to keep agent autonomy safe and to avoid *over
   along the way.
 - **Pragmatism.** Be plain, finish the job. A reviewer pass may improve presentation, safety and
   quality, but never redesigns the core methodology or architecture from scratch.
-- **Memory records *why*.** In logs and commit messages, write why a decision was made rather than
-  what was done. The code already holds the "what"; memory should hold the reasoning.
-- **Loop breaker.** If you hit the same error or blocker twice in a row, stop struggling: break the
-  loop and hand it to the user (`questions.md` or a message).
-- **Adversarial review.** For genuinely risky changes, brief a sub-agent whose only job is to find
-  weak points, security holes and logic errors; touch the main files only after that pass.
+- **Memory records *why*.** In logs and commit messages, write why a decision was made rather
+  than what was done. The code already holds the "what".
+- **Loop breaker.** If you hit the same error twice in a row, stop struggling: break the loop and
+  hand it to the user (`questions.md` or a message).
+- **Adversarial review.** For risky changes, brief a sub-agent whose only job is to find weak
+  points, security holes and logic errors; touch the main files only after that pass.
 - **The evolution contract.** Neither over-constrained nor unconstrained: the repository should
   evolve on its own without losing its character, breaking, or over-engineering. It must never lose
   memory or capabilities, and must stay open to gaining new ones. That splits cleanly — the
