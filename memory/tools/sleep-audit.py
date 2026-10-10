@@ -9,13 +9,14 @@ said "budgets are targets, not ceilings; aggressive distillation is lossless" fo
 optimising "don't turn the lint red" instead of "distil". Prose alone could not stop that; a
 mechanical gate can.
 
-Five checks, all diff-based (no LLM):
+Six checks, all diff-based (no LLM):
   1. FABRICATION — a dated fact added to L1 must have its date somewhere in the raw layer.
   2. LOSS        — a removed dated line's CONTENT must survive (same file, History, or archive).
   3. BLOAT       — the number of files in the ceiling band must not grow.
   4. RATCHET     — a file pressed against the ceiling may not grow at all.
   5. L2          — archive is append-only; memory *content* is never deleted (operational
                    state such as memory/.sleep-lock is outside that rule).
+  6. TASK        — an inbox block tagged (sleep-task) may not be archived without its outcome.
 
 Usage:
   python memory/tools/sleep-audit.py            # working tree vs HEAD (before committing)
@@ -52,6 +53,8 @@ RATCHET_TOLERANCE = 150  # growth below this on an over-target file is normal ev
 # file that is not yet in the band is normal unless it exceeds RATCHET_TOLERANCE.
 
 DATE_RE = re.compile(r"\[(\d{4}-\d{2}-\d{2})")
+TASK_RE = re.compile(r"\(sleep-task\)")
+TASK_DONE_RE = re.compile(r"\(sleep-task-result\)")
 L1_RE = re.compile(r"^memory/(domains|people)/.*\.md$")
 EXEMPT_RE = re.compile(r"←\s*\[\[|\[\[archive|\(default:")
 
@@ -251,6 +254,38 @@ def check_l2(d: dict, target: str | None) -> None:
             errors.append(f"L2           {old}: an archive file was modified (append-only, invariant #1)")
 
 
+def check_task(d: dict, target: str | None) -> None:
+    """A (sleep-task) block may not slip into the archive without its outcome recorded.
+
+    Why: consolidation only knew how to distil. When the owner delegates an actual job to the
+    night run by leaving a tagged note in the inbox, that note would otherwise be distilled,
+    archived and silently forgotten — and a capability dying quietly is a bug here, not a
+    tradeoff. The rule lives in rules/consolidation.md; this is only the gate that keeps it
+    from being skipped.
+
+    The gate is deliberately loose: it cannot check that the outcome is CORRECT, only that it
+    was WRITTEN. Failure is a legitimate outcome — "(sleep-task-result) could not create it:
+    <error>" passes. The outcome is looked for in the inbox only; the first version searched
+    the whole diff and mistook the rule's own description of the marker for a result.
+    """
+    pending = []
+    for status, old, new in d["files"]:
+        if not status.startswith("R") or not old.startswith("memory/inbox/"):
+            continue
+        if TASK_RE.search(content(new, target)):
+            pending.append(new)
+    if not pending:
+        return
+    traces = "\n".join(
+        "\n".join(v) for path, v in d["added"].items() if path.startswith("memory/inbox/"))
+    if TASK_DONE_RE.search(traces):
+        return
+    errors.append(
+        "TASK         " + ", ".join(pending) + ": a (sleep-task) block is being archived with "
+        "no outcome recorded — do the job and append a '(sleep-task-result) …' line to the "
+        "inbox (with the reason, if it failed)")
+
+
 def main() -> int:
     argv = sys.argv[1:]
     target = None
@@ -277,6 +312,7 @@ def main() -> int:
     check_loss(d, target)
     check_bloat_and_ratchet(d, target)
     check_l2(d, target)
+    check_task(d, target)
 
     for w in warnings:
         print(f"WARN   {w}")

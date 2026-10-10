@@ -66,6 +66,9 @@ the finding (RATCHET/BLOAT = compress that file or move its detail under
 memory/archive/<domain>/YYYY/; FABRICATION/LOSS = show the source or put the line back) and run it
 once more. If it is still red, git reset --hard pre-sleep, commit nothing, and say why in the
 summary. Then one atomic commit, git push origin main.
+If the inbox holds a block tagged (sleep-task), DO that job (see "Sleep tasks" in
+consolidation.md) and append its outcome to the inbox as one (sleep-task-result) line;
+failure is an outcome too.
 Do NOT apply anything behind an approval gate (merging entities, aliases, unsourced removals, a new
 domain) — write it into memory/questions.md and carry on. Leave memory/.sleep-lock alone.
 Ask nothing, wait for no approval. Print a one-paragraph summary when you are done.'

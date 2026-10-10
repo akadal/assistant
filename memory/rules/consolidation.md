@@ -36,7 +36,7 @@ hand (`/sleep`, or just "run a consolidation"), or opportunistically at the star
 3. **Two gates (scripts):** `python3 memory/tools/lint.py` **and**
    `python3 memory/tools/sleep-audit.py` — both must be green before the commit. Lint checks the
    schema; the audit checks the distillation itself (fabrication, loss, bloat, ratchet, L2
-   integrity). If either is red the model gets exactly one repair attempt; if still red, abort
+   integrity, delegated sleep tasks). If either is red the model gets exactly one repair attempt; if still red, abort
    (`git reset --hard pre-sleep`). Once sleep runs unattended, this pair replaces the human diff
    review — it is not optional.
 4. **Close-out:** move the processed logs into `archive/inbox/` → one atomic commit (the message
@@ -48,6 +48,23 @@ hand (`/sleep`, or just "run a consolidation"), or opportunistically at the star
 
 If a run goes wrong: `git reset --hard pre-sleep` and run it again. Re-running is cheaper than
 making a 40k-token pass resumable.
+
+## Sleep tasks — doing work alongside distilling
+
+Consolidation does not only distil. A job left in the inbox tagged `(sleep-task)` is **carried
+out during the run**. This is for work the agent could not do during the day because the
+permission, the tool or the environment was not there: it stops, leaves a trace and does not
+break the task at hand (the same discipline as a tool gap).
+
+1. The trace block says **what to do, step by step**, and where to report a failure. A vague
+   "sort this out as well" cannot be delegated.
+2. **Approval gates still apply:** irreversible or outward-facing work (bulk deletion, sending,
+   history rewriting) cannot be a sleep task; that block goes to `questions.md` instead.
+3. The work is a **separate commit** — it does not join the atomic consolidation commit
+   (invariant #2). If it belongs to another repository, it lives there anyway.
+4. **The outcome is always written:** one line tagged `(sleep-task-result)`. Failure is a
+   legitimate outcome; silence is not. `sleep-audit.py`'s TASK check holds the gate — a tagged
+   block cannot move into `archive/inbox/` until its outcome is in the inbox.
 
 ## Conflict resolution (first match wins)
 

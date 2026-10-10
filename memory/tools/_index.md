@@ -13,8 +13,8 @@ path here must exist. A tool without a trigger dies silently — that is why thi
   the rule files themselves (router/rule) and catches orphan rules and orphan tools.
   **Trigger:** before every consolidation commit; whenever a memory file is edited by hand.
 - `memory/tools/sleep-audit.py` — mechanical quality audit of the consolidation diff: fabrication,
-  loss, bloat, ratchet, L2 integrity. **Trigger:** during consolidation, after lint and before the
-  commit (the second gate); `--last` to audit a past sleep commit.
+  loss, bloat, ratchet, L2 integrity, delegated sleep tasks. **Trigger:** during consolidation,
+  after lint and before the commit (the second gate); `--last` to audit a past sleep commit.
 - `memory/tools/sleep-check.sh` — sleep trigger; exit 0 means a run is due. Says "NO SLEEP" while
   a fresh lock exists. `--nightly`: skips the once-a-day test, so the scheduled run is
   unconditional (AGENTS.md §6c). **Trigger:** at the start of every session; `--nightly` from
