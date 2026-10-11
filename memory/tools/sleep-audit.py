@@ -55,6 +55,7 @@ RATCHET_TOLERANCE = 150  # growth below this on an over-target file is normal ev
 DATE_RE = re.compile(r"\[(\d{4}-\d{2}-\d{2})")
 TASK_RE = re.compile(r"\(sleep-task\)")
 TASK_DONE_RE = re.compile(r"\(sleep-task-result\)")
+CODE_SPAN_RE = re.compile(r"`[^`\n]*`")
 L1_RE = re.compile(r"^memory/(domains|people)/.*\.md$")
 EXEMPT_RE = re.compile(r"←\s*\[\[|\[\[archive|\(default:")
 
@@ -272,7 +273,11 @@ def check_task(d: dict, target: str | None) -> None:
     for status, old, new in d["files"]:
         if not status.startswith("R") or not old.startswith("memory/inbox/"):
             continue
-        if TASK_RE.search(content(new, target)):
+        # A marker inside backticks *documents the grammar*, it does not delegate work —
+        # the same code-span exemption lint applies to link checking (FORMAT.md §link
+        # scope). A session summary that merely explains the rule must not turn the gate
+        # red when no task was ever delegated.
+        if TASK_RE.search(CODE_SPAN_RE.sub(" ", content(new, target))):
             pending.append(new)
     if not pending:
         return
