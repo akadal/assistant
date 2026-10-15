@@ -17,6 +17,9 @@ People and organisations: memory/people/_index.md
 
 1. READ: open the `_index.md` of the matching domain, then follow the full path on the line.
    Never read a folder wholesale; read a file under 600 tokens in full.
+1b. STATUS QUESTION ("did it arrive / what happened / where does it stand"): read
+   `memory/inbox/` plus the last two days of `memory/archive/inbox/` first. An "Open/TODO"
+   line in a dated document is a snapshot, not live truth; never answer from one file alone.
 2. If a person or organisation is involved, check the alias table in memory/people/_index.md.
 3. On a miss, search domain-scoped: `rg -m 20 "<term>" -g 'memory/domains/<d>/**'`
    (try the other languages this memory uses). Repo-wide search only with cross-domain intent.
