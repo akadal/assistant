@@ -28,10 +28,16 @@ Usage:
   python3 write.py task --title "..." [--due 2026-09-15] [--description ...] --confirm
   python3 write.py draft --to a@b.com --subject "..." --body "..." \
       [--attach path/file.pdf ...] --confirm
+
+HTML PART: a draft is written as plain text + HTML (multipart/alternative). Why: Gmail opens a
+text/plain-only draft in plain-text mode and hard-wraps its lines at ~70 characters when it is
+sent, so the recipient sees sentences broken mid-line. The HTML part puts Gmail in rich-text
+mode and the lines flow to the reader's screen.
 """
 import argparse
 import base64
 import datetime as dt
+import html
 import mimetypes
 import os
 import sys
@@ -206,11 +212,18 @@ def task_delete(a, tok):
     print("deleted, id:", t["id"])
 
 
+def _html(text):
+    # The shape Gmail writes itself: one <div>, a <br> per line. A blank line separates paragraphs.
+    lines = text.replace("\r\n", "\n").strip("\n").split("\n")
+    return '<div dir="ltr">' + "<br>\n".join(html.escape(s, quote=False) for s in lines) + "</div>\n"
+
+
 def draft(a, tok):
     m = EmailMessage()
     m["To"] = a.to
     m["Subject"] = a.subject
     m.set_content(a.body)
+    m.add_alternative(_html(a.body), subtype="html")
     print(f"DRAFT: → {a.to}  \"{a.subject}\"  ({len(a.body)} characters)")
     # Attachments are embedded in the raw MIME message. Gmail's drafts.create
     # endpoint (no uploadType) takes roughly 5 MB of raw body, and base64 grows
