@@ -34,3 +34,4 @@ memory/tools/.state/
 
 # Sleep harness command — local to each machine (sleep-run.sh, AGENTS.md §6)
 memory/.sleep-command
+memory/delegate.ini

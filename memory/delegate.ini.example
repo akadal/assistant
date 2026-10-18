@@ -1,0 +1,60 @@
+# delegate.ini - who does the bulk work, and who backs them up.
+#
+# Copy this file to memory/delegate.ini and edit it. The real file is gitignored, so your
+# choice of models stays yours and template updates will not conflict with it.
+#
+# Every value here can also come from the environment, which wins over the file:
+#   ASSISTANT_DELEGATE_CHAIN="gemini,grok"
+#   ASSISTANT_DELEGATE_BACKUP="a Sonnet sub-agent"
+#
+# Nothing in this design assumes a particular vendor leads. Today your main session may be
+# Claude with Gemini doing the grunt work; swap the values below and it is the other way round,
+# with no rule changes anywhere.
+
+[roles]
+# Engines to try, in order. The first one that answers wins.
+chain = gemini
+
+# Who picks the work up when every engine in the chain has failed. This is a harness-side
+# actor, so delegate.py cannot call it: it exits with code 3 and names this string, and your
+# agent is expected to hand the same work to it rather than stalling. Write it so an agent
+# reading the message knows exactly what to do.
+backup = a Sonnet sub-agent
+
+# --- engines -------------------------------------------------------------------------------
+# One [engine:<name>] section per CLI. Sections here override the built-in defaults and add
+# new engines. Required keys:
+#
+#   command       the executable, found on PATH
+#   args          its arguments. {prompt} is replaced by the prompt as a single argument
+#                 (never shell-interpolated); {model} by the model for the chosen tier.
+#   model_grunt   model for scanning, listing, summarising
+#   model_advice  model for reasoning
+#
+# Pick a capable model for the grunt tier too. On a flat subscription the cheapest model is a
+# false economy: a half-good answer costs your main session a verification pass, which is the
+# saving you were chasing.
+#
+# Flags change often. If an engine suddenly starts failing, run its --help and fix `args` here
+# rather than editing delegate.py.
+
+[engine:gemini]
+command = agy
+args = --model {model} --sandbox --dangerously-skip-permissions -p {prompt}
+model_grunt = gemini-4-argon-medium
+model_advice = gemini-4-argon-high
+
+# An engine whose CLI takes an effort level where another takes a model name: {model} simply
+# carries whatever string the tier is set to.
+[engine:grok]
+command = grok
+args = --reasoning-effort {model} --permission-mode bypassPermissions -p {prompt}
+model_grunt = low
+model_advice = high
+
+# Your own, for example a local model server with an OpenAI-compatible CLI:
+# [engine:local]
+# command = my-llm-cli
+# args = --model {model} --non-interactive {prompt}
+# model_grunt = qwen3-30b
+# model_advice = qwen3-235b

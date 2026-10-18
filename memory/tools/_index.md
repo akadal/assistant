@@ -28,6 +28,12 @@ path here must exist. A tool without a trigger dies silently — that is why thi
   is measured — after a schema change or a change in distillation behaviour.
 - `memory/tools/golden-set.md` — the versioned question set; an old question is never removed.
 
+- `memory/tools/delegate.py` — hands bulk, low-judgement work to an external agent CLI. Roles
+  are configuration (`chain`, `backup`; `ASSISTANT_DELEGATE_*` then `memory/delegate.ini`), so no
+  vendor is hardcoded. Never opens the repository root or `secret/`; exit 3 means the chain is
+  exhausted, give the work to the backup. **Trigger:** work that is high in volume and low in
+  judgement (AGENTS.md section 12).
+
 ## Integrations
 
 - `memory/tools/secret-put.py` — the owner types a key into their own terminal; it lands in

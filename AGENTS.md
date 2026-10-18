@@ -214,13 +214,13 @@ its **trigger** (when to run it). Ask that file "what do I have?"; do not add to
 |---|---|
 | consolidation / sleep run | memory/rules/consolidation.md |
 | schema · enum · budget · fact grammar question | memory/rules/format.md |
+| delegating bulk work to another model | memory/rules/delegation.md |
 
 Keep this table complete as you add rule files. Routing keeps the router small at one real risk:
-**a trigger that never fires makes the capability die silently** — no error is raised, the work is
-just done incompletely. Three lint checks stand against that: *orphan rule* (every file under
-`rules/` appears in this table), *orphan tool* (every script appears in the tool index) and *shell
-syntax* (a hook that cannot be parsed does nothing and says nothing). Losing a capability quietly is
-a **bug** here, not a silent gap.
+**a trigger that never fires makes the capability die silently** — nothing errors, the work is just
+done incompletely. Three lint checks stand against that: *orphan rule* (every file under `rules/`
+is in this table), *orphan tool* (every script is in the tool index) and *shell syntax* (a hook
+that cannot be parsed does nothing and says nothing). Losing a capability quietly is a **bug**.
 
 ## 8. Naming and formatting (short)
 
@@ -276,22 +276,22 @@ a **bug** here, not a silent gap.
 
 For big coding or research tasks, to keep agent autonomy safe and to avoid *overengineering*:
 
-- **Acceptance criteria and scope guard.** When planning, write down the file scope you will touch
-  and what "done" means, then stay inside it. Fix the stated thing; do not invent a new architecture
-  along the way.
-- **Pragmatism.** Be plain, finish the job. A reviewer pass may improve presentation, safety and
-  quality, but never redesigns the core methodology or architecture from scratch.
-- **Memory records *why*.** In logs and commit messages, write why a decision was made rather
-  than what was done. The code already holds the "what".
-- **Loop breaker.** If you hit the same error twice in a row, stop struggling: break the loop and
-  hand it to the user (`questions.md` or a message).
+- **Acceptance criteria and scope guard.** When planning, write down the file scope and what
+  "done" means, then stay inside it. Fix the stated thing; do not invent an architecture.
+- **Pragmatism.** Be plain, finish the job. A reviewer pass improves presentation, safety and
+  quality; it never redesigns the core methodology from scratch.
+- **Memory records *why*.** In logs and commit messages write why, not what; the code already
+  holds the "what".
+- **Loop breaker.** On the same error twice in a row, stop struggling: break the loop and hand it
+  to the user (`questions.md` or a message).
+- **Delegating bulk work outward.** Work high in volume and low in judgement (screening results,
+  reading mail, scanning a codebase, batch summarising) leaves the main session's context: hand it
+  to an external agent CLI and keep only the answer. See `memory/rules/delegation.md`.
 - **Adversarial review.** For risky changes, brief a sub-agent whose only job is to find weak
   points, security holes and logic errors; touch the main files only after that pass.
-- **The evolution contract.** Neither over-constrained nor unconstrained: the repository should
-  evolve on its own without losing its character, breaking, or over-engineering. It must never lose
-  memory or capabilities, and must stay open to gaining new ones. That splits cleanly — the
-  **never-lose** half is mechanical, with no tolerance (lint + `sleep-audit.py` + append-only L2);
-  the **evolution** half stays free, since adding a tool, a rule file or a domain needs no
-  permission round, only a trace. When a check blocks legitimate work, **calibrate the check, do not
-  curtail the work**. And no capability may die quietly: when a rule moves behind a trigger, the
-  check that catches a *missed* trigger is built in the same change.
+- **The evolution contract.** The repository evolves on its own without losing its character or
+  over-engineering. The **never-lose** half is mechanical, with no tolerance (lint +
+  `sleep-audit.py` + append-only L2); the **evolution** half is free, since a new tool, rule file
+  or domain needs no permission round, only a trace. When a check blocks legitimate work,
+  **calibrate the check, do not curtail the work**. No capability may die quietly: when a rule
+  moves behind a trigger, the check that catches a *missed* trigger ships in the same change.
