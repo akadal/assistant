@@ -138,13 +138,13 @@ memory/
 1. L2 is append-only and immutable; L1 can always be re-derived from it.
 2. Every consolidation is one atomic commit; risky operations get their own commit.
 3. The only source of truth for "processed" is file location (`inbox/` → `archive/inbox/`); no state file.
-4. Lint is mechanical, is the only gate, and is the same for humans and models; `rules/format.md` is the single schema authority.
+4. Lint is mechanical, the only gate, the same for humans and models; `rules/format.md` is the single schema authority.
 5. There is no deletion; forgetting = moving to `## History` / `archive/` + dropping from the index.
 6. The root file holds no facts; volatile context lives in `state.md`.
-7. Single-home: a fact has exactly one home, everything else links to it. Ambiguous bare names are a lint error.
+7. Single-home: a fact has one home, everything else links to it. Ambiguous bare names are a lint error.
 8. Budgets are numbers (in characters) and they live in lint.
 9. Data leaving the machine is default-deny: local embeddings only, `secret/` excluded, remote allowlist.
-10. Only consolidation (and the human) writes to `domains/`, `people/`, the root and `state.md`; interactive work writes only to `inbox/` and `archive/`.
+10. Only consolidation (and the human) writes to `domains/`, `people/`, the root and `state.md`; interactive work only to `inbox/` and `archive/`.
 
 ## 4. Read protocol (summary — full version in docs/DESIGN.md §6)
 
@@ -286,7 +286,7 @@ For big coding or research tasks, to keep agent autonomy safe and to avoid *over
   to the user (`questions.md` or a message).
 - **Delegating bulk work outward.** Work high in volume and low in judgement (screening results,
   reading mail, scanning code, batch summarising) leaves the main session: hand it to an external
-  agent CLI, keep only the answer, and log the handover. See `memory/rules/delegation.md`.
+  agent CLI, keep only the answer, and log it. See `memory/rules/delegation.md`.
 - **Adversarial review.** For risky changes, brief a sub-agent whose only job is to find weak
   points, security holes and logic errors; touch the main files only after that pass.
 - **The evolution contract.** The repository evolves on its own without losing its character or
