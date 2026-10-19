@@ -214,7 +214,7 @@ its **trigger** (when to run it). Ask that file "what do I have?"; do not add to
 |---|---|
 | consolidation / sleep run | memory/rules/consolidation.md |
 | schema · enum · budget · fact grammar question | memory/rules/format.md |
-| delegating bulk work to another model | memory/rules/delegation.md |
+| high-volume, low-judgement work: bulk screening, scanning, many-file summarising | memory/rules/delegation.md |
 
 Keep this table complete as you add rule files. Routing keeps the router small at one real risk:
 **a trigger that never fires makes the capability die silently** — nothing errors, the work is just

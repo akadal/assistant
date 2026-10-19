@@ -14,6 +14,12 @@ for rather than to the session you are in.
 What it is not for: anything needing this repository's rules, the owner's voice, or a memory write.
 Those stay in the main session.
 
+**Leave a one-line trace of every delegation**: what was handed over, to which engine, and
+whether it helped. The tool writes its output under `memory/tools/.state/`, which is gitignored
+and therefore invisible from your other machines. Without a trace in the memory itself, the
+question "is this capability actually being used?" has no answer later, and a capability nobody
+can see is one nobody maintains.
+
 ## Why a CLI and not MCP
 
 MCP would bind this repository to a single harness. The design is explicitly multi-harness and
