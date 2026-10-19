@@ -214,7 +214,7 @@ its **trigger** (when to run it). Ask that file "what do I have?"; do not add to
 |---|---|
 | consolidation / sleep run | memory/rules/consolidation.md |
 | schema · enum · budget · fact grammar question | memory/rules/format.md |
-| high-volume, low-judgement work: bulk screening, scanning, many-file summarising | memory/rules/delegation.md |
+| high-volume, low-judgement work (screening, scanning, summarising) | memory/rules/delegation.md |
 
 Keep this table complete as you add rule files. Routing keeps the router small at one real risk:
 **a trigger that never fires makes the capability die silently** — nothing errors, the work is just
@@ -285,8 +285,8 @@ For big coding or research tasks, to keep agent autonomy safe and to avoid *over
 - **Loop breaker.** On the same error twice in a row, stop struggling: break the loop and hand it
   to the user (`questions.md` or a message).
 - **Delegating bulk work outward.** Work high in volume and low in judgement (screening results,
-  reading mail, scanning a codebase, batch summarising) leaves the main session's context: hand it
-  to an external agent CLI and keep only the answer. See `memory/rules/delegation.md`.
+  reading mail, scanning code, batch summarising) leaves the main session: hand it to an external
+  agent CLI, keep only the answer, and log the handover. See `memory/rules/delegation.md`.
 - **Adversarial review.** For risky changes, brief a sub-agent whose only job is to find weak
   points, security holes and logic errors; touch the main files only after that pass.
 - **The evolution contract.** The repository evolves on its own without losing its character or
