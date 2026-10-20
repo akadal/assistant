@@ -10,6 +10,12 @@ hand (`/sleep`, or just "run a consolidation"), or opportunistically at the star
    read taps defined in `secret/sources.md`, and append a summary plus a provenance trace to the
    inbox. On error, tell the user and continue — a dead tap never blocks a consolidation.
 1. **Pre-flight (script):** is the working tree clean → create a `pre-sleep` checkpoint commit.
+
+   **While a run holds the lock, the session-start pull is skipped on that machine**
+   [2026-10-21]. If `memory/.sleep-lock` is fresh (under two hours) and names this machine,
+   `AGENTS.md` §0.3's `git pull --rebase --autostash` is not run: `--autostash` would stash and
+   restore the running consolidation's half-finished working tree. The run already pulled when it
+   started, so the copy is not stale. Another machine's lock does not stop the pull.
 2. **LLM pass** (as much sub-context per domain as it needs):
    - **Input:** the unprocessed `inbox/` logs + the relevant `_index` files + the target files +
      the *entire* alias table from `people/_index.md` (it is small, and namesake detection needs all of it).
