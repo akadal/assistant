@@ -79,6 +79,12 @@ break the task at hand (the same discipline as a tool gap).
 3. **Ask threshold:** a high-impact area (identity, relationships, health, finance) or two
    user statements close together in time → do not resolve automatically, ask. A fact awaiting an
    answer stays in the file marked `(?)`.
+4. **"Still open" in a `(wrapup)` block is a snapshot.** It reports what one session could see,
+   not the state of the repository, because people run several sessions at once and the other
+   ones are often invisible from where the block was written. If another record says the same
+   work finished, **finished wins**, even on the same date; on its own, "still open" never moves
+   an L1 item back to `active`, never marks it `paused` and never opens a task. A block stamped
+   "other session(s) were open at the same time" makes this absolute.
 
 ## The question queue — how it drains
 

@@ -26,6 +26,11 @@ path here must exist. A tool without a trigger dies silently — that is why thi
 - `memory/tools/eval.py` — golden-set runner; logs accuracy, turns and tokens to `eval-log.csv`.
   `kayit`/`record` subcommand logs non-interactively. **Trigger:** whenever the north-star metric
   is measured — after a schema change or a change in distillation behaviour.
+- `memory/tools/session-wrapup.py` — closes a session on purpose: writes the agent's own
+  wrap-up to the inbox with a `(wrapup)` trace, runs lint as the gate, commits and pushes. Runs
+  no consolidation; stamps the block when other sessions were open at the same time.
+  **Trigger:** the owner says the session is over ("wrap up", "that's a wrap", "stop"). Bind a
+  slash command to it if your harness has them.
 - `memory/tools/golden-set.md` — the versioned question set; an old question is never removed.
 
 - `memory/tools/delegate.py` — hands bulk, low-judgement work to an external agent CLI. Roles
