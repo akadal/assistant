@@ -32,6 +32,15 @@ hand (`/sleep`, or just "run a consolidation"), or opportunistically at the star
      6. Refresh the `## Hot` / `## Files` blocks of every touched index; refresh `state.md`.
      7. Sweep `todo.md`: drop completed `[x]` items (the record lives in git); firm up the
         `[[link]]`s on the open ones.
+     8. **Ongoing-line rotation.** A `- [YYYY-MM-DD→]` line is a claim that something is
+        *still true*, and nothing ever audits it, so it lives forever. Every run, take the
+        **five oldest ongoing lines** and check them against later records: leave them alone if
+        still valid, close them as `[t1→t2]` and move them to `## History` if not. No tool
+        needed: `rg -n "^\s*- \[[0-9-]+(, [^]]*)?→\]" memory/domains memory/people`.
+        Rationale: the real garbage is not the old file, it is the stale line inside a living
+        file — sleep never touches a file whose name does not appear in the inbox. **Limit:**
+        a stale claim written as an undated prose sentence will not be caught by this rotation;
+        state claims belong on dated lines (see the fact grammar in `rules/format.md`).
    - **Output:** file updates + `questions.md` items (**no cap** — see the question queue section).
 3. **Two gates (scripts):** `python3 memory/tools/lint.py` **and**
    `python3 memory/tools/sleep-audit.py` — both must be green before the commit. Lint checks the

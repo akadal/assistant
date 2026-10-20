@@ -25,7 +25,11 @@ path here must exist. A tool without a trigger dies silently — that is why thi
   `--asked` bumps the counter. **Trigger:** session start; immediately after asking (`--asked`).
 - `memory/tools/eval.py` — golden-set runner; logs accuracy, turns and tokens to `eval-log.csv`.
   `kayit`/`record` subcommand logs non-interactively. **Trigger:** whenever the north-star metric
-  is measured — after a schema change or a change in distillation behaviour.
+  is measured — after a schema change or a change in distillation behaviour, **and whenever the
+  newest row in `eval-log.csv` is more than 30 days old**. The prose trigger alone does not
+  fire: in the original deployment measurement died silently twice (25 and 35 days), because
+  "did distillation behaviour change?" is a question nobody notices asking. Put the calendar
+  check wherever your health check lives.
 - `memory/tools/session-wrapup.py` — closes a session on purpose: writes the agent's own
   wrap-up to the inbox with a `(wrapup)` trace, runs lint as the gate, commits and pushes. Runs
   no consolidation; stamps the block when other sessions were open at the same time.
