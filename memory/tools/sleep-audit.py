@@ -283,6 +283,13 @@ def check_task(d: dict, target: str | None) -> None:
         return
     traces = "\n".join(
         "\n".join(v) for path, v in d["added"].items() if path.startswith("memory/inbox/"))
+    # The moved log's OWN content counts too [2026-10-21]. A sleep task is its own commit
+    # (consolidation.md, invariant #2), so its outcome line lands in that earlier commit and is
+    # absent from this run's diff. The gate used to turn a correct run red for exactly that.
+    # The text searched is still inbox text only (the rule's own prose cannot open the gate);
+    # it is simply read in its archived location as well.
+    traces += "\n" + "\n".join(
+        CODE_SPAN_RE.sub(" ", content(pth, target)) for pth in pending)
     if TASK_DONE_RE.search(traces):
         return
     errors.append(
