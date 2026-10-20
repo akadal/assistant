@@ -40,7 +40,7 @@ for _s in (sys.stdout, sys.stderr):
 
 FIELDS = ["date", "question_id", "category", "language", "correct", "turns", "tokens", "note"]
 CATEGORIES = ("single-fact", "synthesis", "temporal", "update", "abstention", "confusion-trap",
-              "protocol")
+              "protocol", "status")
 
 # docs/DESIGN.md §10.2 — v1 thresholds
 THRESHOLDS = {

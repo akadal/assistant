@@ -27,7 +27,7 @@ produced the answer and you scored it. Results land in `eval-log.csv`.
 
 ```
 ## Q<n>
-category: single-fact | synthesis | temporal | update | abstention | confusion-trap | protocol
+category: single-fact | synthesis | temporal | update | abstention | confusion-trap | protocol | status
 language: <language tag, e.g. en, de, tr, or "cross">
 question: <one line, worded the way you would actually ask it>
 expected: <the core of the correct answer; for abstention, "must say it is not in memory">
@@ -44,6 +44,12 @@ expected: <the core of the correct answer; for abstention, "must say it is not i
 | abstention | Not making things up | Something genuinely not in memory |
 | confusion-trap | Domain isolation | Two namesakes, or similar entities in different domains |
 | protocol | Whether a rule gate actually fires | "I ask for X. What is your first step?" |
+| status | Live state, where the newest record beats a stale one | "Is project Y on hold right now?" |
+
+A status question's expected answer depends on the date, so write it with an `[as-of YYYY-MM-DD]`
+tag and update it when it goes stale. The category exists because a set that only tests stored
+facts can score 100% while the user is complaining that memory is slipping: those complaints were
+about a stale single source, an unchecked inbox or a forgotten promise, not a lost fact.
 
 A leak on a confusion-trap question is an alarm, not a rounding error: it means the single-home
 rule has been violated somewhere.

@@ -3,7 +3,7 @@
 
 Three rule classes:
   1. frontmatter parse + enums + required fields
-  2. [[link]] / full-path target existence + alias uniqueness
+  2. [[link]] / full-path / bare-name target existence + alias uniqueness
   3. character budgets
 
 Configuration is read from the `lint-config` yaml block inside memory/rules/format.md —
@@ -14,6 +14,7 @@ Exit code: 0 = green, 1 = red (a consolidation may only commit on green).
 
 from __future__ import annotations
 
+import difflib
 import os
 import re
 import shutil
@@ -196,6 +197,33 @@ def linkable_text(text: str) -> str:
     return INLINE_CODE_RE.sub("", text)
 
 
+SHORT_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]*(\.md)?$")
+
+
+def short_names(text: str) -> list[str]:
+    """Return the bare file names (ids) listed under an index's '## Files' section.
+
+    Items are split on ' · '; a leading label ('Papers:', 'closed:') is dropped and the first
+    word is taken. Full paths, globs ('book-*') and [[links]] are left to their own checks."""
+    m = re.search(r"^## Files\s*\n(.*?)(?=^## |\Z)", text, re.S | re.M)
+    if not m:
+        return []
+    items: list[str] = []
+    for line in m.group(1).splitlines():
+        if line.startswith("- "):
+            items.append(line[2:])
+        elif items and line[:1].isspace() and line.strip():
+            items[-1] += " " + line.strip()      # item wrapped onto a second line
+    out = []
+    for item in items:
+        for part in item.split("·"):
+            part = re.sub(r"^(\S+:\s+)+", "", part.strip())
+            word = part.split()[0].rstrip(",;") if part.split() else ""
+            if SHORT_NAME_RE.match(word):
+                out.append(word.removesuffix(".md"))
+    return out
+
+
 def main() -> int:
     cfg = load_config()
     if not cfg:
@@ -290,6 +318,17 @@ def main() -> int:
         for m in FULLPATH_RE.finditer(routing):
             if not (MEMORY.parent / m.group(0)).exists():
                 err(f"{r}: full-path target does not exist: {m.group(0)}")
+        # An index may list bare names under '## Files' to save budget ("Path: .../<file>").
+        # A bare name is neither a [[link]] nor a full path, so it slipped past both checks
+        # above; in the original deployment four such names in one index pointed at files that
+        # did not exist and single-fact questions went from 2 tool turns to 5. Ids equal file
+        # names and are unique repo-wide, so a bare name must resolve to an id.
+        if kind == "index" and r.startswith("memory/domains/"):
+            for name in short_names(routing):
+                if name not in all_ids:
+                    near = difflib.get_close_matches(name, all_ids, n=1, cutoff=0.6)
+                    hint = f" (closest: {near[0]})" if near else ""
+                    err(f"{r}: bare name under Files does not resolve to a file: {name}{hint}")
 
         if kind == "entity" and fm:
             for a in fm.get("aliases", []) or []:
