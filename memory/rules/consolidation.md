@@ -9,6 +9,10 @@ hand (`/sleep`, or just "run a consolidation"), or opportunistically at the star
 0. **Source pull (if configured):** pull whatever changed since the last fetch from the external
    read taps defined in `secret/sources.md`, and append a summary plus a provenance trace to the
    inbox. On error, tell the user and continue — a dead tap never blocks a consolidation.
+0b. **Upstream mechanism updates:** `python3 memory/tools/upstream-sync.py`. One `ls-remote`
+   when nothing is new; otherwise its own commit plus an `(upstream-sync)` inbox note, which this
+   run triages like any block: customised files the owner must decide on go to `questions.md`
+   as `approval` items. Never blocks a consolidation. Detail: `docs/UPGRADING.md`.
 1. **Pre-flight (script):** is the working tree clean → create a `pre-sleep` checkpoint commit.
 
    **While a run holds the lock, the session-start pull is skipped on that machine**

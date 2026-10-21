@@ -15,12 +15,23 @@ Because the split is clean, upgrading is a path-scoped checkout. Nothing you hav
 git remote add upstream https://github.com/<owner>/assistant.git
 ```
 
-## Pulling an update
+That remote is also the switch for automatic updates: from then on every sleep runs
+`memory/tools/upstream-sync.py`. It costs one `git ls-remote` when nothing is new. When upstream
+moves, each mechanism file is sorted by one question — *is the local copy byte-identical to some
+version upstream ever shipped?* If yes, nobody edited it here, and it is updated. If no, it was
+customised, and it is left alone and listed in the inbox for you to decide. The update is its own
+commit (revert it alone with `git revert`); if it would turn a green lint red it is rolled back
+instead. New "Breaking changes" sections below are listed in the inbox too.
+
+No remote, no updates: the tool says so and does nothing.
+
+## Pulling an update by hand
 
 ```bash
 git fetch upstream
 git diff HEAD upstream/main -- AGENTS.md INSTALL.md docs setup memory/rules memory/tools   # look first
 git checkout upstream/main -- AGENTS.md INSTALL.md docs setup memory/rules memory/tools
+git checkout HEAD -- memory/tools/golden-set.md   # your questions, not the template's
 python3 memory/tools/lint.py
 git add -A && git commit -m "chore: pull mechanism updates from upstream" && git push origin main
 ```

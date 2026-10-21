@@ -21,6 +21,10 @@ path here must exist. A tool without a trigger dies silently — that is why thi
   `sleep-run.sh`.
 - `memory/tools/sleep-run.sh` — scheduled, unattended sleep runner: pull → due? → lock → harness →
   release. It does no distilling itself. **Trigger:** a scheduler on **one** machine only.
+- `memory/tools/upstream-sync.py` — takes mechanism updates from the template: files never
+  edited here are updated in their own commit, customised ones are listed in the inbox, lint
+  red rolls it back. No-op without an `upstream` remote. **Trigger:** every sleep (step 0b of
+  `rules/consolidation.md`, and `sleep-run.sh`); `--check` to just look.
 - `memory/tools/question-pick.py` — picks the question of the day by effective due date;
   `--asked` bumps the counter. **Trigger:** session start; immediately after asking (`--asked`).
 - `memory/tools/eval.py` — golden-set runner; logs accuracy, turns and tokens to `eval-log.csv`.

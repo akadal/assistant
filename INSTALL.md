@@ -38,7 +38,10 @@ Then verify three things, and stop to resolve anything that fails:
 1. **`origin` is the user's own repository**, not the upstream template. If `origin` still points
    at the project this was copied from, tell them: they need their own repository, because
    everything they say from here on gets committed and pushed to it. Do not continue until it is
-   fixed. (`gh repo create <name> --private --source=. --remote=origin` is one way.)
+   fixed. (`gh repo create <name> --private --source=. --remote=origin` is one way.) Then keep
+   the template as `upstream`, so every sleep can take mechanism updates
+   (`docs/UPGRADING.md`): `git remote add upstream <template URL>`. For a "Use this template"
+   copy, `gh repo view --json templateRepository` names it.
 2. **The repository is private.** If you can check (`gh repo view --json isPrivate -q .isPrivate`),
    check. If it is public, say so plainly and stop: a public memory core exposes everything they
    are about to tell you. Do not continue until it is private or they explicitly, knowingly accept

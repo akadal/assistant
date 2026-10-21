@@ -139,7 +139,11 @@ release() {
 }
 trap release EXIT INT TERM
 
-# --- 4. harness pass ------------------------------------------------------
+# --- 4. upstream mechanism updates (no-op without an `upstream` remote) ----
+# Before the harness, so tonight's run already reads the updated rules and the inbox note.
+python3 memory/tools/upstream-sync.py >> "$LOG" 2>&1 || log "WARN upstream-sync failed — consolidation goes on"
+
+# --- 5. harness pass ------------------------------------------------------
 log "consolidation starting ($MACHINE)"
 COMMAND=$(sleep_command)
 # If your harness runs session hooks, guard them so this nested call does not re-trigger them.
