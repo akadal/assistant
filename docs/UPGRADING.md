@@ -12,7 +12,7 @@ Because the split is clean, upgrading is a path-scoped checkout. Nothing you hav
 ## One-time setup
 
 ```bash
-git remote add upstream https://github.com/<owner>/assistant.git
+git remote add upstream https://github.com/<owner>/eleman.git
 ```
 
 That remote is also the switch for automatic updates: from then on every sleep runs
