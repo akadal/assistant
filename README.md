@@ -1,8 +1,12 @@
 <h1 align="center">eleman</h1>
 
+<p align="center"><strong>Not intelligence. Memory.</strong></p>
+
 <p align="center">
   <em>A personal memory core for AI assistants — plain markdown, plain git, no service to run.</em>
 </p>
+
+<p align="center"><a href="https://eleman.akadal.tr">eleman.akadal.tr</a> · <a href="https://eleman.akadal.tr/tr/">Türkçe</a></p>
 
 <p align="center">
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue.svg"></a>
@@ -156,6 +160,11 @@ Anything that reads `AGENTS.md` (or `CLAUDE.md`, which points at it) and can rea
 It has no dependency on any one vendor's memory feature, MCP server or plugin system — that is
 deliberate, so that the same repository works from a different machine with a different assistant
 tomorrow.
+
+## Website and enterprise
+
+The project site is [eleman.akadal.tr](https://eleman.akadal.tr). Companies that want eleman set up
+on their own servers, under their own rules, can reach the maintainer through the form there.
 
 ## Contributing
 
