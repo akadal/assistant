@@ -1,6 +1,6 @@
 # Contributing
 
-This project is the *mechanism* — the rules, the schema, the scripts, the design contract. Nobody's
+eleman is the *mechanism*: the rules, the schema, the scripts, the design contract. Nobody's
 memory content lives here, and none should ever arrive in a pull request.
 
 ## Before you open a PR

@@ -1,4 +1,4 @@
-# Design contract — a personal memory core
+# eleman: design contract for a personal memory core
 
 **Scope:** the core only — data structure, memory lifecycle, read protocol. No UI, no backend, no
 service process.

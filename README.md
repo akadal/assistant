@@ -1,4 +1,4 @@
-<h1 align="center">assistant</h1>
+<h1 align="center">eleman</h1>
 
 <p align="center">
   <em>A personal memory core for AI assistants — plain markdown, plain git, no service to run.</em>
@@ -16,7 +16,7 @@ Your AI assistant forgets you every morning. The usual fixes are to paste your l
 (expensive, and everything bleeds into everything else) or to hand it to a hosted memory service
 (someone else's database, someone else's terms).
 
-This is the third option: **a repository your assistant reads and writes as its long-term memory.**
+eleman is the third option: **a repository your assistant reads and writes as its long-term memory.**
 Markdown files, a directory convention, three small scripts, and git underneath. No daemon, no
 database, no API key. Any agent that can read files can use it — Claude Code, Codex, Cursor, or the
 next one.
@@ -85,7 +85,7 @@ file to hand-edit.
 <summary>Prefer the command line?</summary>
 
 ```bash
-gh repo create my-memory --template <owner>/assistant --private --clone
+gh repo create my-memory --template <owner>/eleman --private --clone
 cd my-memory && claude
 ```
 

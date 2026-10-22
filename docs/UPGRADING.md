@@ -4,7 +4,7 @@ Your repository has two kinds of content, and they never overlap:
 
 | | Owned by | Examples |
 |---|---|---|
-| **Mechanism** | this project | `AGENTS.md`, `INSTALL.md`, `README.md`, `docs/`, `setup/`, `memory/rules/`, `memory/tools/` |
+| **Mechanism** | eleman (upstream) | `AGENTS.md`, `INSTALL.md`, `README.md`, `docs/`, `setup/`, `memory/rules/`, `memory/tools/` |
 | **Memory** | you | `memory/MEMORY.md`, `memory/state.md`, `memory/domains/`, `memory/people/`, `memory/inbox/`, `memory/archive/`, `memory/todo.md`, `memory/questions.md`, `memory/secret/` |
 
 Because the split is clean, upgrading is a path-scoped checkout. Nothing you have written is touched.
